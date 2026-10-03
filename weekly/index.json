@@ -1,0 +1,14 @@
+{
+ "week": "2026-W40",
+ "from": "2026-10-01",
+ "to": "2026-10-02",
+ "sessions": 2,
+ "rendered_at": "2026-10-03T10:00:22+02:00",
+ "ig": "latest_ig.png",
+ "li": "latest_li.png",
+ "sizes": {
+  "ig": "1080x1350",
+  "li": "1200x627"
+ },
+ "note": "Paper money · educational · not investment advice · not affiliated with Anthropic"
+}
