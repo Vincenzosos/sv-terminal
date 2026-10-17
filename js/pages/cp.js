@@ -150,8 +150,9 @@
       const wide = matchMedia("(min-width: 1100px)").matches;     // the wide layout: the chart fills its tall panel
       const box = h("div", { class: "chart-box", style: wide ? "height:100%;min-height:380px" : "height:260px" });
       const live = s.state === "live";
+      const by = document.querySelector('meta[name="author"]')?.content;      // the public site's author line (publish.py)
       el.replaceChildren(
-        pageHead("Claude Portfolio", "US stocks picked by Claude twice a week · paper money"),
+        pageHead("Claude Portfolio", `US stocks picked by Claude twice a week · paper money${by ? ` · by ${by}` : ""}`),
         kpiRow(s),
         h("div", { class: "cp-grid" },
         s.pending && !live ? section("next", "Claude's picks", pendingList(s.pending), { cls: "cp-table" }) : null,
