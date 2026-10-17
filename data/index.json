@@ -1,0 +1,40 @@
+{
+ "v": 1,
+ "built": "2026-10-17T10:28:46+02:00",
+ "site": "https://vincenzosos.github.io/sv-terminal/",
+ "public": {
+  "/api/cp/curve": [
+   "d9acc14dbf85378318a4e6a7ee110ebc5064ae0a",
+   200
+  ],
+  "/api/cp/holdings": [
+   "4a2f0192445507f142a3f177d59659871addf359",
+   200
+  ],
+  "/api/cp/summary": [
+   "d5bdef2bc4377b4f649191284af367935f79a0ec",
+   200
+  ],
+  "/api/cp/updates": [
+   "7b9acfa2757b62d246a8eddbcde73fa4076a6a84",
+   200
+  ],
+  "/api/glossary": [
+   "9e9304f7b106dbf4f1f60984518cd8db320ebad5",
+   200
+  ],
+  "/api/status": [
+   "7fbc29f027b400f6512972fd492109517e235ed4",
+   200
+  ]
+ },
+ "locked": false,
+ "counts": {
+  "public": 6,
+  "private": 0,
+  "public_errors": 0,
+  "private_errors": 0,
+  "optional_dropped": 0
+ },
+ "schedule": "every 30 minutes 07:30-23:00 Berlin on weekdays while the owner's app runs, after the lab's nightly step and after the switch tracker's 23:20 update"
+}
