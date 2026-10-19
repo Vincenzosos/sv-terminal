@@ -45,7 +45,7 @@
     }
     return kpiStrip([
       { label: "Value", tier: "hero", value: $u(s.value), detail: h("span", {}, pc(s.return, fmt.p2), ` since ${day(s.start)}`) },
-      { label: "S&P 500 ETF", tier: "major", value: pc(s.bench_return, fmt.p2), detail: h("span", { class: "muted" }, "same days, same $10,000") },
+      { label: "S&P 500 ETF", tier: "major", value: pc(s.bench_return, fmt.p2), detail: h("span", { class: "muted" }, `same days, same ${$u(s.capital, usd0)}`) },
       { label: "Difference", value: ok(diff) ? pc(diff, fmt.p2) : "—", detail: h("span", { class: "muted" }, "portfolio minus ETF") },
       { label: "After tax if sold", value: $u(s.after_tax_value), detail: h("span", { class: "muted" }, `26% tax: ${$u(s.tax_if_sold)}`) },
       { label: "Next decision", value: wday(s.next_decision), detail: h("span", { class: "muted" }, `${s.positions} companies · cash ${w(s.cash_weight)}`) },
@@ -96,7 +96,7 @@
   }
 
   function updateCard(u) {
-    const st = u.pending ? badge("Trades at the next session end", "paper") : u.filled_on ? badge(`Traded ${dayShort(u.filled_on)}`, "ok")
+    const st = u.pending ? badge("Trades at the next session end", "paper") : u.filled_on ? badge(`Traded ${dayShort(u.filled_on)}${u.venue ? " at Interactive Brokers (demo)" : ""}`, "ok")
       : u.status === "ok" ? badge("Decided", "") : badge("Rejected by the rules", "warn");
     const lists = [["New", "new", u.new], ["Closed", "closed", u.closed], ["Resized", "resized", u.resized]]
       .filter(([, , xs]) => xs && xs.length)
