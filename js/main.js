@@ -25,7 +25,7 @@ function syncNav(page) {
     tag.title = ws === "paper" ? "Claude Portfolio: paper money only, no real orders" : "My Portfolio: your real Trade Republic holdings (read-only)";
   }
   const disc = $("foot-disc");                          // the one-line disclaimer; the full text is in How it works › Legal
-  if (disc) disc.textContent = ws === "paper" ? "Paper money · educational · not investment advice" : "Your own portfolio · facts, not advice";
+  if (disc) disc.textContent = ws === "paper" ? "Paper money · educational · not investment advice · not affiliated with Anthropic" : "Your own portfolio · facts, not advice";
   CUR_CODE = nav.code;
   statusSource();
 }
@@ -156,14 +156,18 @@ async function pollInbox() {
 }
 
 /* ---------------------------------------------------------------- start */
+/* Since 17 Oct 2026 the site is the Claude Portfolio only (one page, NAV = [cp]): the shell's search box, alerts bell,
+   clock and quote stream are hidden, so their requests (the fund catalogue, the inbox, the glossary) are not made
+   (28 Oct 2026). They come back by themselves if another page returns to NAV. */
+const SHELL_EXTRAS = NAV.length > 1;
 buildNav();
-api("/api/glossary").then((g) => { GLOSSARY = g; }).catch(() => {});
-if (!window.BussolaStatic) pollInbox();
+if (SHELL_EXTRAS) api("/api/glossary").then((g) => { GLOSSARY = g; }).catch(() => {});
+if (SHELL_EXTRAS && !window.BussolaStatic) pollInbox();
 tickClocks();
 renderLive();
 setInterval(tickClocks, 10_000);
-if (!window.BussolaStatic) setInterval(pollInbox, 60_000);
-setInterval(renderLive, 5_000);
+if (SHELL_EXTRAS && !window.BussolaStatic) setInterval(pollInbox, 60_000);
+if (SHELL_EXTRAS) setInterval(renderLive, 5_000);
 window.addEventListener("hashchange", () => Router.render());
 Router.render();
-if (!window.BussolaStatic) setTimeout(loadFunds, 4000);       // the catalogue for the search box
+if (SHELL_EXTRAS && !window.BussolaStatic) setTimeout(loadFunds, 4000);       // the catalogue for the search box

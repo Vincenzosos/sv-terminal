@@ -134,6 +134,7 @@ const Live = {
   connect() {
     if (new URLSearchParams(location.search).has("snapshot")) return;       // static render for screenshots: no stream
     const keys = this.keys().join(",");
+    if (!keys && !this.es) return;                                         // nobody wants a quote: no stream (28 Oct 2026)
     if (this.es && this._keys === keys && this.es.readyState !== 2) return;
     this._keys = keys;
     if (this.es) this.es.close();
