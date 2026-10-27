@@ -72,7 +72,7 @@
         { key: "co", label: "Company", lead: true, fmt: (r) => company(r) },
         { key: "weight", label: "Weight", num: true, fmt: (r) => w(r.weight) },
         { key: "paid", label: "Paid", num: true, hideSm: true, fmt: (r) => $u(r.paid) },
-        { key: "value", label: "Value now", num: true, fmt: (r) => $u(r.value) },
+        { key: "value", label: "Value now", num: true, hideSm: true, fmt: (r) => $u(r.value) },
         { key: "gain", label: "Gain", num: true, fmt: (r) => h("span", {}, $s(r.gain), h("br"), h("small", {}, pc(r.gain_pct))) },
         { key: "since", label: "Since", hideSm: true, fmt: (r) => (r.since ? dayShort(r.since) : "—") },
       ],

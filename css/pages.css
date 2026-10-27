@@ -288,3 +288,20 @@ body { background: radial-gradient(1200px 560px at 88% -14%, rgba(217, 119, 87, 
   .cp-grid > [data-sec="updates"] { grid-area: updates; }
   .cp-grid > [data-sec="about"] { grid-area: about; }
 }
+/* 27 Oct 2026: the strip has 5 tiles live (3 before the first trade), not the old 6: one wide hero track, then as many
+   equal tracks as there are tiles, so no empty cell on the right and "$102,461.27" fits without the ellipsis. */
+@media (min-width: 1100px) {
+  .stats.kpis { grid-template-columns: minmax(0, 1.9fr); grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+}
+.kpis .stat.hero .v { font-size: clamp(34px, 3.3vw, var(--fs-hero)); text-overflow: clip; }
+/* the header's second row held the tabs and the search, both hidden on this one-page site: no empty band on phones;
+   the holdings table fits the phone (Company, Weight, Gain) instead of scrolling sideways */
+@media (max-width: 1099px) {
+  .top-inner { grid-template-rows: 44px; }
+}
+@media (max-width: 700px) {
+  .cp-grid [data-sec="holdings"] table { table-layout: fixed; width: 100%; }
+  .cp-grid [data-sec="holdings"] th:first-child { width: 50%; }
+  .cp-grid [data-sec="holdings"] th:nth-child(2) { width: 17%; }
+  .cp-grid [data-sec="holdings"] td:last-child { white-space: nowrap; }
+}
