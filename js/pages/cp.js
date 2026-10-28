@@ -1104,7 +1104,7 @@
     }
     const hd = target.querySelector("h2, h1");
     if (hd) hd.focus({ preventScroll: true });
-    history.replaceState(null, "", href);
+    history.replaceState(null, "", "#/cp");          // the address stays the page's own: a reload or a shared link opens at the top
   }
   function wire(root) {
     listen(document, "click", onAnchor);

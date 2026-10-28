@@ -197,6 +197,8 @@ function legacyRoute(path, params) {
   /* 17 Oct 2026: My Portfolio, the Trading Lab and How it works were removed; every former route lands on the Claude Portfolio */
   return "#/cp";
 }
+/* the page always opens at the top: no scroll position carried over from an earlier visit or a reload (28 Oct 2026) */
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 const Router = {
   current: null,
   parse() {
@@ -215,6 +217,10 @@ const Router = {
     if (!page || sub) {                                   // a former route, or nothing: the tab and section that hold it now
       const to = legacyRoute(page ? `${page}/${sub}` : path, params) || `#/${(window.BussolaStatic ? "lab" : "portfolio")}`;
       if (to !== location.hash) { location.replace(to); return; }
+    }
+    if (this.current === null && (params.has("sec") || params.has("open"))) {   // opening the site: always at the top
+      params.delete("sec"); params.delete("open");
+      history.replaceState(null, "", `${location.pathname}${location.search}#/${page}`);
     }
     if (this.current && Pages[this.current] && Pages[this.current].leave) Pages[this.current].leave();
     Live.want("page", []);
