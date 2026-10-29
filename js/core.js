@@ -180,7 +180,7 @@ function renderLive() {
    works). A page's sections are reached with ?sec=<id> (scrolled into view) and ?open=<id> (a collapsed "Details"
    section opened). Every route of the former layout (Overview, Explore, Alerts, the ten lab sub-pages, the model desk) is
    sent to the tab and section that now holds it (legacyRoute). */
-const Pages = {};           // id -> {title, render(el, params), onQuote?(key, q, prev), leave?()}
+const Pages = {};           // id -> {title, render(el, params), update?(params) → true if handled in place, onQuote?(key, q, prev), leave?()}
 const APP_NAME = "SV Terminal";
 const MODES = {
   invest: { label: "My Portfolio", sub: "real money · read-only", home: "portfolio", ws: "real" },
@@ -219,9 +219,12 @@ const Router = {
       if (to !== location.hash) { location.replace(to); return; }
     }
     if (this.current === null && (params.has("sec") || params.has("open"))) {   // opening the site: always at the top
-      params.delete("sec"); params.delete("open");
-      history.replaceState(null, "", `${location.pathname}${location.search}#/${page}`);
+      params.delete("sec"); params.delete("open");                              // (of its tab: ?tab= stays, 29 Oct 2026)
+      const rest = String(params);
+      history.replaceState(null, "", `${location.pathname}${location.search}#/${page}${rest ? `?${rest}` : ""}`);
     }
+    /* the same page with other parameters (a tab of the Claude Portfolio): the page moves there itself, nothing reloads */
+    if (this.current === page && Pages[page].update && Pages[page].update(params)) return;
     if (this.current && Pages[this.current] && Pages[this.current].leave) Pages[this.current].leave();
     Live.want("page", []);
     this.current = page;

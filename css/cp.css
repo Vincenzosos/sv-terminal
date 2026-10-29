@@ -1,5 +1,5 @@
 /* Claude Portfolio (#/cp): the page's own design layer (redesign of 27 Oct 2026, review fixes of 28 Oct 2026;
-   brief: SVTerminal_dev/redesign/SPEC.md).
+   brief: SVTerminal_dev/redesign/SPEC.md; four tabs instead of one long page, 29 Oct 2026).
    "A research note with a live ledger": warm charcoal paper, ivory ink, one terracotta accent; Source Serif 4 for titles
    and Claude's own words, Inter for the interface and figures, IBM Plex Mono only for evidence (hashes, times, as-of).
    Loaded last (after app.css and, on the public site, static.css), so it wins over the legacy terminal styles.
@@ -52,6 +52,9 @@
   --cp-s1: 4px; --cp-s2: 8px; --cp-s3: 12px; --cp-s4: 16px; --cp-s5: 24px; --cp-s6: 32px; --cp-s7: 48px; --cp-s8: 64px;
   --cp-r1: 8px; --cp-r2: 12px; --cp-r3: 16px;
   --cp-max: 1200px; --cp-gutter: 16px; --cp-gap: 16px; --cp-section: 64px; --cp-header: 56px; --cp-pad: 16px;
+  /* the tab bar under the header row (<900px), the part of the header that stays on screen while scrolling (scroll
+     margins), and the space above a tab's first heading */
+  --cp-tabbar: 64px; --cp-sticky: var(--cp-tabbar); --cp-tab-top: 28px; --cp-miniband: 28px;
   --cp-flow-gap: 56px;
   --cp-dur-1: 150ms; --cp-dur-2: 240ms; --cp-dur-3: 700ms; --cp-ease: cubic-bezier(.2, .7, .2, 1);
   --cp-z-header: 50; --cp-z-tip: 60;
@@ -60,12 +63,16 @@
   :root { --cp-t-value: 600 var(--cp-fs-3xl) / 1 var(--cp-sans); }
 }
 @media (min-width: 768px) {
-  :root { --cp-gutter: 24px; --cp-gap: 24px; --cp-section: 80px; --cp-pad: 24px;
+  :root { --cp-gutter: 24px; --cp-gap: 24px; --cp-section: 80px; --cp-pad: 24px; --cp-tab-top: 40px;
+    --cp-sticky: calc(var(--cp-header) + var(--cp-tabbar));
     --cp-t-h1: 600 var(--cp-fs-3xl) / 1.06 var(--cp-serif); --cp-t-h2: 600 var(--cp-fs-2xl) / 1.15 var(--cp-serif);
     --cp-t-quote: 400 var(--cp-fs-lg) / 1.6 var(--cp-serif); }
 }
+@media (min-width: 900px) {
+  :root { --cp-tabbar: 0px; --cp-sticky: var(--cp-header); }
+}
 @media (min-width: 1100px) {
-  :root { --cp-gutter: 32px; --cp-section: 104px; --cp-header: 64px;
+  :root { --cp-gutter: 32px; --cp-section: 104px; --cp-header: 64px; --cp-tab-top: 48px;
     --cp-t-value: 600 var(--cp-fs-4xl) / 1 var(--cp-sans); --cp-t-h1: 600 var(--cp-fs-4xl) / 1.04 var(--cp-serif);
     --cp-t-deck: 400 var(--cp-fs-xl) / 1.4 var(--cp-serif); }
 }
@@ -83,6 +90,9 @@ body[data-page="cp"] ::selection { background: var(--cp-accent-wash); color: var
 #search, #search-toggle, #bell, #live, #clock, #tabs, #statusbar { display: none !important; }
 body[data-page="cp"] :focus-visible { outline: 2px solid var(--cp-focus); outline-offset: 2px; }
 body[data-page="cp"] [tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
+/* a heading that receives focus on a tab switch is not a control: no ring around its whole (block-wide) box. Screen
+   readers still announce it */
+body[data-page="cp"] .cp :is(h1, h2, h3)[tabindex="-1"]:focus-visible { outline: none; }
 body[data-page="cp"] a { color: var(--cp-accent); text-decoration: none; }
 body[data-page="cp"] a:hover { text-decoration: underline; text-underline-offset: 3px; }
 body[data-page="cp"] .up { color: var(--cp-up); }
@@ -109,21 +119,30 @@ body[data-page="cp"] .logo svg { width: 22px; height: 22px; color: var(--cp-acce
 body[data-page="cp"] .logo span {
   font: 600 var(--cp-fs-lg) / 1 var(--cp-serif); letter-spacing: 0; text-transform: none; white-space: nowrap;
 }
-.cp-nav { display: none; }
+/* the four tabs (#cp-nav, links with aria-current="page" on the tab shown). Below 900px a segmented bar, the header's
+   second row (on phones only that row stays on screen while scrolling); from 900px links in the header row */
+.cp-nav {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; order: 3; flex: 1 0 100%;
+  height: calc(var(--cp-tabbar) - 16px); margin: 6px 0 10px; padding: 1px;
+  border: 1px solid var(--cp-line-2); border-radius: 10px; background: var(--cp-surface);
+}
 .cp-nav a {
-  padding: 8px 10px; border-radius: var(--cp-r1); font: 500 var(--cp-fs-md) / 1 var(--cp-sans); white-space: nowrap;
+  display: flex; align-items: center; justify-content: center; min-width: 0; padding: 0 4px; border-radius: 7px;
+  font: 500 var(--cp-fs-sm) / 1 var(--cp-sans); white-space: nowrap; overflow: hidden;
   transition: background-color var(--cp-dur-1), color var(--cp-dur-1);
 }
+.cp-nav .t-s { display: none; }
 body[data-page="cp"] .cp-nav a { color: var(--cp-ink-2); }
 body[data-page="cp"] .cp-nav a:hover { color: var(--cp-ink); background: var(--cp-raised); text-decoration: none; }
-body[data-page="cp"] .cp-nav a[aria-current="true"] {
-  color: var(--cp-ink); text-decoration: underline; text-decoration-color: var(--cp-accent);
-  text-decoration-thickness: 2px; text-underline-offset: 6px;
+body[data-page="cp"] .cp-nav a[aria-current="page"] {
+  color: var(--cp-ink); background: var(--cp-raised); font-weight: 600; box-shadow: inset 0 -2px 0 var(--cp-accent);
 }
 /* the right-hand group (mini scoreboard, status, theme) always sits at the right edge, whatever is shown in it */
 body[data-page="cp"] .top-right { display: flex; align-items: center; gap: 10px; padding: 0; margin-left: auto; flex: none; }
 .cp-mini { display: none; }
-.cp-mini b { font-variant-numeric: tabular-nums lining-nums; }
+.cp-mini b { font-variant-numeric: tabular-nums lining-nums; font-weight: 600; color: var(--cp-ink); }
+.cp-mini .k { color: var(--cp-ink-3); }
+.cp-mini .sep { color: var(--cp-ink-4); }
 .cp-status {
   display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 10px 0 8px; border: 1px solid var(--cp-line-2);
   border-radius: 999px; font: 500 var(--cp-fs-sm) / 1 var(--cp-sans); color: var(--cp-ink-2); white-space: nowrap;
@@ -178,13 +197,41 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
 
 /* ================================================================ primitives */
 .cp-wrap { width: 100%; max-width: calc(var(--cp-max) + 2 * var(--cp-gutter)); padding-inline: var(--cp-gutter); margin-inline: auto; }
-.cp-sec { padding-block: var(--cp-section) 0; scroll-margin-top: calc(var(--cp-header) + 16px); }
-.cp-index + .cp-sec { padding-top: calc(var(--cp-section) * .7); }
+.cp-sec { padding-block: var(--cp-section) 0; scroll-margin-top: calc(var(--cp-sticky) + 16px); }
+.cp-sec .cp-head, .cp-legal h2 { scroll-margin-top: calc(var(--cp-sticky) + 20px); }
+.cp-hero + .cp-sec { padding-top: calc(var(--cp-section) * .7); }
+/* a tab: shown alone (the others carry the hidden attribute), its first heading near the top, room before the footer */
+.cp-panel { padding-bottom: calc(var(--cp-section) * .75); }
+.cp-panel > .cp-sec:first-child { padding-top: var(--cp-tab-top); }
+.cp-panel[data-panel="method"] { padding-bottom: 0; }
+/* How it works holds five parts: a shorter gap between them than between the sections of the old one-page site */
+.cp-panel[data-panel="method"] > .cp-sec + .cp-sec { padding-top: calc(var(--cp-section) * .7); }
+/* the end of a tab: a link on to the next one */
+.cp-onward { display: flex; justify-content: flex-end; margin-top: var(--cp-s7); }
+.cp .cp-onward a {
+  display: inline-grid; justify-items: end; gap: 2px; padding: 6px 0; text-align: right;
+  font: 600 var(--cp-fs-lg) / 1.3 var(--cp-serif); color: var(--cp-ink);
+}
+.cp .cp-onward .ar { color: var(--cp-accent); }
+.cp-onward .k { font: 500 var(--cp-fs-sm) / 1.3 var(--cp-mono); color: var(--cp-ink-3); }
+.cp-onward a:hover { text-decoration-color: var(--cp-accent); }
+.cp-panel.cp-fade { animation: cp-fade var(--cp-dur-1) var(--cp-ease) both; }
+@keyframes cp-fade { from { opacity: 0; } to { opacity: 1; } }
+.cp-skel-tab { padding-top: var(--cp-tab-top); padding-bottom: 48px; }
 .cp-eyebrow { font: 500 var(--cp-fs-sm) / 1.3 var(--cp-mono); letter-spacing: .02em; color: var(--cp-ink-3); }
 .cp-head { margin-bottom: 28px; max-width: 900px; }
-.cp-head h2 { margin-top: 10px; font: var(--cp-t-h2); letter-spacing: -0.012em; color: var(--cp-ink); text-wrap: balance; }
+.cp-head :is(h1, h2) { margin-top: 10px; font: var(--cp-t-h2); letter-spacing: -0.012em; color: var(--cp-ink); text-wrap: balance; }
 .cp-dek { margin-top: 12px; max-width: 68ch; color: var(--cp-ink-2); font-size: var(--cp-fs-base); }
 .cp-head .cp-sum { margin-top: 10px; font: 400 var(--cp-fs-sm) / 1.4 var(--cp-mono); color: var(--cp-ink-3); }
+.cp-dek a { text-decoration: underline; text-underline-offset: 3px; }
+/* How it works: its index row, one link per part */
+.cp-idx ul { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.cp .cp-idx a {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border: 1px solid var(--cp-line-2);
+  border-radius: 999px; font: 500 var(--cp-fs-md) / 1 var(--cp-sans); color: var(--cp-ink-2);
+  transition: background-color var(--cp-dur-1), color var(--cp-dur-1);
+}
+.cp .cp-idx a:hover { background: var(--cp-raised); color: var(--cp-ink); text-decoration: none; }
 .cp-card {
   min-width: 0; background: var(--cp-surface); border: 1px solid var(--cp-line-2); border-radius: var(--cp-r3); padding: var(--cp-pad);
 }
@@ -298,22 +345,16 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
 .cp-cell:nth-child(n + 3) { padding-bottom: 0; }
 .cp-cfig { margin-top: 6px; font: var(--cp-t-fig); letter-spacing: -0.015em; color: var(--cp-ink); }
 .cp-cell .cp-det { margin-top: 6px; font-size: var(--cp-fs-sm); line-height: 1.4; color: var(--cp-ink-3); }
+.cp a.cp-cell-go { display: block; color: inherit; text-decoration: none; }
+.cp-cell-go .cp-go { color: var(--cp-accent); }
+.cp a.cp-cell-go:hover .cp-cfig { text-decoration: underline; text-decoration-color: var(--cp-accent); text-underline-offset: 4px; }
+.cp a.cp-cell-go:hover .cp-label { color: var(--cp-ink-2); }
 .cp-asof {
   margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--cp-line);
   font: 400 var(--cp-fs-xs) / 1.55 var(--cp-mono); color: var(--cp-ink-3);
 }
-.cp-caveat { margin-top: 16px; font-size: var(--cp-fs-sm); color: var(--cp-ink-3); }
-.cp-index { margin-top: 28px; }
-.cp-index ul { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; padding: 2px 0; }
-.cp-index ul::-webkit-scrollbar { display: none; }
-.cp-index li { flex: none; scroll-snap-align: start; }
-.cp .cp-index a {
-  display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border: 1px solid var(--cp-line-2); border-radius: 999px;
-  font: 500 var(--cp-fs-md) / 1 var(--cp-sans); color: var(--cp-ink-2); white-space: nowrap;
-}
-.cp .cp-index a:hover { color: var(--cp-ink); background: var(--cp-raised); text-decoration: none; }
 
-/* ================================================================ 01 record */
+/* ================================================================ Overview: record */
 .cp-chart { padding: var(--cp-pad); }
 .cp-chart-top { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 24px; min-height: 52px; margin-bottom: 14px; }
 .cp-readout { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; min-width: 0; flex: 1 1 420px; }
@@ -373,9 +414,50 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
 .cp-defs dt { font-weight: 600; color: var(--cp-ink); }
 .cp-defs dd { margin-top: 2px; color: var(--cp-ink-2); }
 
-/* ================================================================ 02 holdings */
+/* Overview › Record: risk and return against the ETF (29 Oct 2026). Two tables (each on its own; Claude against the
+   ETF), side by side from 1100px; each row a name over a one-line definition, the figure or the "from ..." gate */
+.cp-risk { margin-top: var(--cp-gap); }
+.cp-rk-grid { display: grid; gap: 4px var(--cp-s7); }
+.cp-rk-g { min-width: 0; }
+.cp-rk-g > .cp-label { margin-top: 20px; }
+.cp-tr.cp-rk { margin-top: 4px; }
+.cp-rk th[scope="row"] { height: auto; padding: 11px 0 11px; vertical-align: top; }
+.cp-rk td { height: auto; padding-top: 11px; padding-bottom: 11px; vertical-align: top; line-height: 1.35; }
+.cp-rk thead th:last-child { white-space: nowrap; }
+/* each table closes with its own last row's rule (also when they stack), so the source line under them needs none */
+.cp-risk > .cp-src { border-top: 0; padding-top: 0; }
+.cp-rk-name { display: block; color: var(--cp-ink); font-weight: 500; }
+.cp-rk-def { display: block; margin-top: 2px; font-size: var(--cp-fs-sm); line-height: 1.45; color: var(--cp-ink-3); }
+.cp-rk-n { display: block; margin-top: 4px; font: 400 var(--cp-fs-xs) / 1.3 var(--cp-mono); color: var(--cp-ink-3); white-space: nowrap; }
+.cp-rk td.is-gated { color: var(--cp-ink-3); }
+.cp-rk td.is-gated .cp-lock { justify-content: flex-end; white-space: nowrap; }
+.cp-risk .cp-src a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.cp-risk .cp-more { margin-top: 12px; }
+.cp-risk .cp-more-b { max-width: 84ch; font-size: var(--cp-fs-md); }
+.cp-rk-f { display: grid; gap: 10px; margin-bottom: 12px; }
+.cp-rk-f dt { color: var(--cp-ink); font-weight: 500; }
+.cp-rk-f dd code { font: 400 var(--cp-fs-sm) / 1.5 var(--cp-mono); color: var(--cp-ink-2); overflow-wrap: anywhere; }
+@media (min-width: 768px) {
+  .cp-rk-f { grid-template-columns: minmax(9rem, auto) minmax(0, 1fr); gap: 6px 24px; }
+  .cp-rk-f > div { display: contents; }
+}
+@media (min-width: 1100px) {
+  .cp-rk-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 479px) {
+  .cp-rk td { padding-left: 8px; }
+  .cp-rk td + td { padding-left: 16px; }        /* Claude's and the ETF's figures, apart like the track record's */
+  .cp-rk td.is-gated .cp-lock { gap: 6px; }
+}
+
+/* ================================================================ Holdings tab */
 .cp-hold-grid { display: grid; gap: var(--cp-gap); }
 .cp-next { border-top: 3px solid var(--cp-accent); }
+.cp-next-none { padding: 14px var(--cp-pad); font-size: var(--cp-fs-base); color: var(--cp-ink); }
+.cp .cp-next-all > summary, .cp .cp-fpt-more > summary { padding-inline: var(--cp-pad); }
+.cp-next-all .cp-more-b, .cp-fpt-more .cp-more-b { max-width: none; padding: 0; }
+.cp-fpt-more { border-top: 0; }
+.cp-fpt-more .cp-more-b { border-top: 1px solid var(--cp-line); }
 .cp-tbar {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   padding: 14px var(--cp-pad); border-bottom: 1px solid var(--cp-line);
@@ -463,9 +545,9 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
 .cp-rules-dl dd span { color: var(--cp-ink-3); }
 .cp-rules-dl dd .cp-flag { color: var(--cp-warn); }
 
-/* ================================================================ 03 decisions */
+/* ================================================================ Decisions tab */
 .cp-log { display: grid; gap: 16px; }
-.cp-log > li { scroll-margin-top: calc(var(--cp-header) + 16px); }
+.cp-log > li { scroll-margin-top: calc(var(--cp-sticky) + 16px); }
 .cp-dec { display: grid; gap: 20px 32px; }
 .cp-rail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
 .cp-rail-h { display: grid; gap: 4px; flex-basis: 100%; font-weight: 400; }
@@ -522,7 +604,7 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
 .cp-proof .cp-hashrow { gap: 6px; }
 .cp .cp-proof a { color: var(--cp-ink-2); text-decoration: underline; text-underline-offset: 3px; }
 
-/* ================================================================ 04 how it works */
+/* ================================================================ How it works tab: pipeline and week */
 .cp-fig { margin: 0; }
 .cp-groups { display: none; }
 .cp-flow { display: grid; gap: 0; counter-reset: none; }
@@ -569,7 +651,7 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
 .cp-day.next .tag.nx { color: var(--cp-accent); }
 .cp-weekc .cp-cap { margin-top: 14px; font-size: var(--cp-fs-sm); color: var(--cp-ink-3); }
 
-/* ================================================================ 05 verify, 06 rules, 07 built by, legal */
+/* ================================================================ How it works tab: verify, rules, built by, legal */
 .cp-steps { display: grid; gap: var(--cp-gap); }
 .cp-step { display: flex; flex-direction: column; gap: 10px; }
 .cp-step .cp-step-n { font: 500 var(--cp-fs-sm) / 1 var(--cp-mono); color: var(--cp-accent); }
@@ -606,7 +688,9 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
 .cp-about { display: grid; gap: var(--cp-gap); }
 .cp-author { display: flex; flex-direction: column; gap: 14px; }
 .cp-name { font: 600 var(--cp-fs-xl) / 1.2 var(--cp-serif); color: var(--cp-ink); }
-.cp .cp-name a { color: var(--cp-ink); }
+.cp .cp-name a { color: var(--cp-ink); text-decoration: underline; text-decoration-color: var(--cp-accent); text-underline-offset: 5px; }
+.cp .cp-name a:hover { text-decoration-thickness: 2px; }
+.cp-name .cp-via { font: 500 var(--cp-fs-md) / 1 var(--cp-sans); color: var(--cp-ink-3); }
 .cp-role { font-size: var(--cp-fs-md); line-height: 1.55; color: var(--cp-ink-2); }
 .cp-alinks { display: flex; flex-wrap: wrap; gap: 8px; }
 .cp-stackw { margin-top: auto; padding-top: 6px; }
@@ -619,19 +703,53 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
 .cp-pieces div { display: grid; gap: 2px; }
 .cp-pieces dt { font-weight: 600; color: var(--cp-ink); }
 .cp-pieces dd { color: var(--cp-ink-2); }
-.cp-legal { margin-top: var(--cp-section); }
-.cp-legal .cp-wrap > div { padding: 56px 0 24px; border-top: 1px solid var(--cp-line); }
+.cp-legal { margin-top: calc(var(--cp-section) * .7); }
+.cp-legal .cp-wrap > div { padding: 40px 0 24px; border-top: 1px solid var(--cp-line); }
 .cp-legal h2 { font: 600 var(--cp-fs-base) / 1.35 var(--cp-sans); color: var(--cp-ink); }
 .cp-legal-b { display: grid; gap: 10px; margin-top: 14px; max-width: 80ch; font-size: var(--cp-fs-md); line-height: 1.6; color: var(--cp-ink-2); }
 .cp-legal-b strong { color: var(--cp-ink); font-weight: 600; }
 .cp-legal-b a { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ================================================================ breakpoints */
-@media (max-width: 479px) {
-  .cp-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* below 900px the header has two rows: logo and controls, then the tab bar; on phones the first row scrolls away and the
+   tab bar stays (a sticky header whose top is one row above the screen) */
+@media (max-width: 899px) {
+  body[data-page="cp"] header.top { height: auto; }
+  body[data-page="cp"] .top-inner { flex-wrap: wrap; height: auto; row-gap: 0; }
+  body[data-page="cp"] .logo, body[data-page="cp"] .top-right { height: var(--cp-header); }
+}
+@media (max-width: 767px) {
+  body[data-page="cp"] header.top { top: calc(-1 * var(--cp-header)); }
+  /* phones: the small scoreboard is a thin band under the tab bar, which stays on screen. The right-hand group dissolves
+     into the header row (display: contents) so the band can take a row of its own */
+  body[data-page="cp"] .top-right { display: contents; }
+  body[data-page="cp"] .cp-status { margin-left: auto; }
+  body[data-page="cp"] .cp-status:empty + .cp-theme { margin-left: auto; }
+  .cp-mini.on {
+    order: 4; flex: 1 0 100%; display: flex; align-items: center; justify-content: center; gap: 6px; margin: -4px 0 0;
+    height: var(--cp-miniband); padding: 0 var(--cp-gutter); border-top: 1px solid var(--cp-line);
+    font: 500 var(--cp-fs-xs) / 1 var(--cp-sans); color: var(--cp-ink-3); white-space: nowrap;
+  }
+  /* on Overview it appears once the scoreboard is scrolled past: hung under the header (absolute), so showing it moves
+     nothing on the page */
+  body[data-cp-tab="overview"] .cp-mini.on {
+    position: absolute; left: 0; right: 0; top: 100%; margin: 0; border-top: 0; border-bottom: 1px solid var(--cp-line);
+    background: var(--cp-bg);
+  }
+  body.mini-on { --cp-sticky: calc(var(--cp-tabbar) + var(--cp-miniband)); }
+}
+@media (max-width: 419px) {
+  .cp-mini .lg { display: none; }
+}
+@media (max-width: 599px) {
   .cp-status .rest { display: none; }
+}
+@media (max-width: 479px) {
+  .cp-nav .t-l { display: none; }
+  .cp-nav .t-s { display: inline; }
+  .cp-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body[data-page="cp"] .logo span { font-size: var(--cp-fs-base); }
-  body[data-page="cp"] .top-inner { gap: 12px; }
+  body[data-page="cp"] .top-inner { column-gap: 12px; }
   .cp-trh .lg { display: none; }
   .cp-trh .sm { display: inline; }
 }
@@ -688,9 +806,6 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
     display: flex; align-items: center; gap: 8px; margin-right: 4px; font: 500 var(--cp-fs-sm) / 1 var(--cp-sans);
     color: var(--cp-ink-3); white-space: nowrap;
   }
-  .cp-mini .k { color: var(--cp-ink-3); }
-  .cp-mini b { font-weight: 600; color: var(--cp-ink); }
-  .cp-mini .sep { color: var(--cp-ink-4); }
   body.mini-on .cp-status .rest { display: none; }
   .cp-plot { height: 320px; }
   .cp-det-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -713,11 +828,19 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
   .cp-fpt tr:last-child td { border-bottom: 0; }
   .cp-fpt .sm-only { display: none; }
 }
-/* 900px and up: the section links in the header (the chip row under the hero is for phones), the five steps as a
-   3 + 2 grid, the verify steps and the author section in columns */
+/* 900px and up: the tabs as links in the header row (the current one underlined), the five steps as a 3 + 2 grid, the
+   verify steps and the author section in columns */
 @media (min-width: 900px) {
-  .cp-nav { display: flex; gap: 2px; margin-left: 8px; }
-  .cp-index { display: none; }
+  .cp-nav {
+    display: flex; gap: 2px; order: 0; flex: none; height: auto; margin: 0 0 0 8px; padding: 0;
+    border: 0; border-radius: 0; background: none;
+  }
+  .cp-nav a { padding: 8px 10px; border-radius: var(--cp-r1); font-size: var(--cp-fs-md); overflow: visible; }
+  body[data-page="cp"] .cp-nav a[aria-current="page"] {
+    background: none; box-shadow: none; font-weight: 500; text-decoration: underline; text-decoration-color: var(--cp-accent);
+    text-decoration-thickness: 2px; text-underline-offset: 6px;
+  }
+  body[data-page="cp"] .cp-nav a[aria-current="page"]:hover { background: var(--cp-raised); }
   .cp-flow { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px var(--cp-flow-gap); }
   .cp-node { display: flex; flex-direction: column; grid-column: span 2; }
   .cp-node.n4, .cp-node.n5 { grid-column: span 3; }
@@ -737,9 +860,14 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
   .cp-about.solo { grid-template-columns: minmax(0, 1fr); }
   .cp-about.solo .cp-pieces { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
 }
-@media (min-width: 900px) and (max-width: 1099px) {
+/* the header row from 900px: logo, the four tabs, then the small scoreboard (on every tab but the top of Overview) and the
+   status pill, each shortened where the row is narrow */
+@media (min-width: 900px) and (max-width: 999px) {
   .cp-status .rest { display: none; }
-  .cp-mini.on { display: none; }
+  body.mini-on .cp-status { display: none; }
+}
+@media (min-width: 900px) and (max-width: 1099px) {
+  .cp-mini .x-asof { display: none; }
 }
 @media (min-width: 900px) and (max-width: 1279px) {
   .cp-nav a { padding: 8px 7px; }
@@ -793,8 +921,7 @@ body[data-page="cp"] footer.foot a { color: var(--cp-ink-2); text-decoration: un
   .cp-rgrid { display: grid; gap: var(--cp-gap); }
   .cp-tbl .c-sec, .cp-tbl .c-since { display: none; }
 }
-@media (min-width: 1100px) and (max-width: 1359px) {
-  body.mini-on .cp-status { display: none; }
+@media (min-width: 900px) and (max-width: 1359px) {
   .cp-mini .lg { display: none; }
 }
 @media (pointer: coarse) {

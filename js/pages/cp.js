@@ -1,8 +1,13 @@
 /* Claude Portfolio (#/cp), the whole site: a rule-bound paper portfolio of S&P 500 stocks whose target weights Claude
    sets twice a week; an Interactive Brokers demo account executes them; every decision is fingerprinted before it trades.
    Redesign of 27 Oct 2026 (brief: SVTerminal_dev/redesign/SPEC.md; styles: css/cp.css), review fixes of 28 Oct 2026.
-   One page in numbered sections: hero and scoreboard, 01 Record, 02 Holdings, 03 Decisions, 04 How it works,
-   05 Verify, 06 Rules, 07 Built by, Legal.
+   29 Oct 2026: four tabs instead of one long page (the owner's request: sections you click to). Each tab is rendered
+   once and shown or hidden, so a switch is instant and loads nothing:
+     Overview (#/cp)                    hero and scoreboard, Record (chart and track record)
+     Holdings (#/cp?tab=holdings)       holdings with their theses, allocation, the next orders while a decision is pending
+     Decisions (#/cp?tab=decisions)     every decision: Claude's note, changes, fills, fingerprints
+     How it works (#/cp?tab=method)     an index row, then the pipeline and the week, Rules, Verify, Built by, Legal
+   The one-line disclaimer sits above every tab, and each tab but the last ends with a link to the next one.
    Every number comes from /api/cp/summary, /holdings, /updates, /curve (or plain arithmetic on them); a missing datum
    shows a designed empty state, never a guess. Nodes are built with h() only (no innerHTML with API text). */
 (function () {
@@ -14,17 +19,25 @@
   const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const REPO_URL = "https://github.com/Vincenzosos/sv-terminal";
   const HISTORY_URL = `${REPO_URL}/commits/gh-pages`;
-  const SECS = [
-    ["record", "Record"], ["holdings", "Holdings"], ["decisions", "Decisions"],
-    ["method", "How it works"], ["verify", "Verify"], ["about", "Built by"],
-  ];
+  /* the tabs: id and label (index.html's #cp-nav has the same four links; the fourth reads "Method" on narrow phones) */
+  const TABS = [["overview", "Overview"], ["holdings", "Holdings"], ["decisions", "Decisions"], ["method", "How it works"]];
+  const TAB_IDS = new Set(TABS.map((t) => t[0]));
+  /* the tab that holds each section: a link to a section (#/cp?sec=<id>, the one-page site's links) opens that tab */
+  const SEC_TAB = {
+    hero: "overview", record: "overview", holdings: "holdings", decisions: "decisions",
+    method: "method", rules: "method", verify: "method", about: "method", legal: "method",
+  };
+  /* the parts of How it works, in page order, for its index row */
+  const METHOD_PARTS = [["method", "Pipeline"], ["rules", "Rules"], ["verify", "Verify"], ["about", "Built by"], ["legal", "Legal"]];
+  /* the author line when the page has none: publish.py writes the public one (meta name=author, link rel=author) from
+     data/publish/config.json "author"; the local app has no such tags. Keep the two in step. */
+  const AUTHOR = { name: "Vincenzo Silvestri", url: "https://www.linkedin.com/in/vincenzopiosilvestri" };
   const DISCLAIMER = "Paper money · educational · not investment advice · not affiliated with Anthropic";
   const LEGAL = "Paper money only: an educational experiment, not a financial service and not investment advice, not a " +
     "recommendation or solicitation to buy or sell any security. Past or simulated results do not predict future results. " +
     "Not affiliated with Anthropic; Claude is used as a tool. Prices: Lang & Schwarz indications, for personal use. " +
     "Member list: Wikipedia (CC BY-SA 4.0).";
   const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const isWide = () => matchMedia("(min-width: 1100px)").matches;
   const NARROW_CHART = 600;                      // below this plot width: no series titles, no marker labels
 
   /* ---------------------------------------------------------------- formatting */
@@ -71,6 +84,12 @@
     do t.setUTCDate(t.getUTCDate() + 1); while (t.getUTCDay() === 0 || t.getUTCDay() === 6);
     return t.toISOString().slice(0, 10);
   }
+  /* a pending decision that changes nothing (no new or closed names, every weight change under the minimum change):
+     no orders are due, so it never reads "orders scheduled" (29 Oct 2026) */
+  const quiet = (u) => !!(u && u.pending && u.status === "ok" && !(u.new || []).length && !(u.closed || []).length
+    && !(u.resized || []).length);
+  /* a pending decision whose orders are due: every "orders scheduled" wording asks this */
+  const scheduled = (u) => !!(u && u.pending && !quiet(u));
   /* the next decision as words: "today, evening" on a decision day before it runs, else "Sat 31 Oct" */
   const isWed = (d) => new Date(`${d}T12:00:00Z`).getUTCDay() === 3;
   const partOfDay = (d) => (isWed(d) ? "evening" : "morning");
@@ -80,13 +99,16 @@
     const m = /(\d+) to (\d+)/.exec((s && s.rules && s.rules[1]) || "");
     return m ? { positions_min: +m[1], positions_max: +m[2] } : {};
   }
-  /* the author line publish.py writes into the public page (meta name=author, link rel=author); none in the local app */
+  /* the author line publish.py writes into the public page (meta name=author, link rel=author); the local app, which has
+     none, uses AUTHOR */
   function author() {
-    const name = (document.querySelector('meta[name="author"]') || {}).content || null;
+    const meta = document.querySelector('meta[name="author"]');
+    if (!meta) return AUTHOR;
     const link = document.querySelector('link[rel="author"]');
     const url = link && /^https:\/\//.test(link.href) ? link.href : null;
-    return { name, url };
+    return { name: meta.content || null, url };
   }
+  const profileSite = (url) => (/linkedin\.com\//i.test(url) ? "LinkedIn" : /github\.com\//i.test(url) ? "GitHub" : "profile");
 
   /* ---------------------------------------------------------------- small parts */
   const chev = () => h("svg", { class: "cp-chev", viewBox: "0 0 12 12", fill: "none", "aria-hidden": "true" },
@@ -129,12 +151,14 @@
     });
     return h("span", { class: "cp-hashrow" }, code, b);
   }
-  const secHead = (eyebrow, id, title, dek, extra) => h("header", { class: "cp-head" },
-    h("p", { class: "cp-eyebrow" }, eyebrow), h("h2", { id: `h-${id}`, tabindex: "-1" }, title),
+  /* a section's head: eyebrow (the section's name), title, dek. level 1 for the first section of a tab: each tab is read
+     as a page of its own, with one h1 (Overview's is the hero question) */
+  const secHead = (eyebrow, id, title, dek, extra, level = 2) => h("header", { class: "cp-head" },
+    h("p", { class: "cp-eyebrow" }, eyebrow), h(`h${level}`, { id: `h-${id}`, tabindex: "-1" }, title),
     dek ? h("p", { class: "cp-dek" }, dek) : null, extra || null);
   const sec = (id, ...kids) => h("section", { class: "cp-sec", "data-sec": id, "aria-labelledby": `h-${id}` },
     h("div", { class: "cp-wrap" }, ...kids));
-  const failed = (e) => framed(`This part could not load: ${(e && e.message) || "no answer"}. The rest of the page is unaffected.`);
+  const failed = (e) => framed(`This part could not load: ${(e && e.message) || "no answer"}. The rest of the site is unaffected.`);
   function more(summary, body, { open = false, cls = "" } = {}) {
     return h("details", { class: `cp-more${cls ? ` ${cls}` : ""}`, open: open || null },
       h("summary", {}, summary), h("div", { class: "cp-more-b" }, body));
@@ -181,22 +205,33 @@
   }
 
   /* ---------------------------------------------------------------- header: status pill and mini scoreboard */
+  /* the pill's words. w1 is all that shows where the header is short (phones, and next to the small scoreboard), so it
+     names the day: "Orders Thu"; the full line is the label and the tooltip */
+  function pillWords(s) {
+    let kind = "steady", w1, rest, full;
+    /* a pending decision that changes nothing (the summary counts its changes): "No changes · next decision ..." */
+    const noOrders = s.state === "live" && s.pending && s.pending.changes === 0;
+    if ((s.pending || s.state === "decided") && !noOrders) {
+      const td = s.pending ? tradeDay(s.pending.decided_on) : null;
+      w1 = td ? `Orders ${wdOf(td)}` : "Orders";
+      rest = td ? ` ${dayShort(td)}, 20:15 Berlin` : " scheduled";
+      full = td ? `Orders scheduled · ${wday(td)}, 20:15 Berlin` : "Orders scheduled";
+    } else if (s.state === "live") {
+      kind = "live"; w1 = noOrders ? "No changes" : "Running"; rest = ` · next decision ${nextWhen(s.next_decision)}`;
+    } else {
+      kind = "idle"; w1 = "Starting"; rest = ` · first decision ${nextWhen(s.next_decision)}`;
+    }
+    return { kind, w1, rest, full: full || w1 + rest };
+  }
   function statusPill(s) {
     const el = $("cp-status");
     if (!el) return;
     if (!s) { el.replaceChildren(); return; }
-    let kind = "steady", w1, rest;
-    if (s.pending || s.state === "decided") {
-      w1 = "Orders";
-      rest = s.pending ? ` scheduled · ${wday(tradeDay(s.pending.decided_on))}, 20:15 Berlin` : " scheduled";
-    } else if (s.state === "live") {
-      kind = "live"; w1 = "Running"; rest = ` · next decision ${nextWhen(s.next_decision)}`;
-    } else {
-      kind = "idle"; w1 = "Starting"; rest = ` · first decision ${nextWhen(s.next_decision)}`;
-    }
+    const { kind, w1, rest, full } = pillWords(s);
     /* the public site is a snapshot: no pulsing dot that would suggest real-time data */
     el.className = `cp-status is-${kind}${window.BussolaStatic ? " still" : ""}`;
-    el.setAttribute("aria-label", w1 + rest);
+    el.setAttribute("aria-label", full);
+    el.title = full;
     el.replaceChildren(h("i", { "aria-hidden": "true" }), h("span", { class: "w1" }, w1), h("span", { class: "rest" }, rest));
   }
   function mini(s) {
@@ -206,7 +241,7 @@
     el.replaceChildren(
       h("span", { class: "k" }, "Claude"), h("b", { class: tone(s.return) || null }, sp(s.return)), h("span", { class: "sep" }, "·"),
       h("span", { class: "k" }, h("span", { class: "lg" }, "S&P 500 "), "ETF"), h("b", { class: tone(s.bench_return) || null }, sp(s.bench_return)),
-      h("span", { class: "sep" }, "·"), h("span", { class: "k" }, `as of ${dayShort(s.as_of)}`));
+      h("span", { class: "sep x-asof" }, "·"), h("span", { class: "k x-asof" }, `as of ${dayShort(s.as_of)}`));
     el.hidden = false;
   }
 
@@ -222,19 +257,19 @@
     const by = who.name ? h("p", { class: "cp-by" }, "by ",
       who.url ? h("a", { href: who.url, rel: "author noopener", target: "_blank" }, who.name, newTab()) : who.name) : null;
     const picks = lim.positions_min ? `${lim.positions_min} to ${lim.positions_max} ` : "";
+    const go = (href, text) => h("a", { href }, text, h("span", { "aria-hidden": "true" }, " →"));
     const text = h("div", { class: "cp-hero-text" },
       h("p", { class: "cp-eyebrow" }, eyebrow),
-      h("h1", { id: "h-hero" }, "Can Claude beat the S&P 500?"),
+      h("h1", { id: "h-hero", tabindex: "-1" }, "Can Claude beat the S&P 500?"),
       by,
       h("p", { class: "cp-deck" }, `A ${cap ? `${cap} ` : ""}paper portfolio of S&P 500 stocks that Claude manages under fixed ` +
         "rules, measured against the S&P 500 ETF on the same days."),
       h("p", { class: "cp-lede" }, `Twice a week Claude picks ${picks}stocks and writes a thesis and the risks for each. ` +
         "Orders fill at an Interactive Brokers demo account, and every decision is fingerprinted and published before it trades."),
       h("p", { class: "cp-links" },
-        h("a", { href: "#/cp?sec=method" }, "How it works ↓"), h("a", { href: "#/cp?sec=verify" }, "Check the record ↓")));
-    const caveat = $("pub-disclaimer") ? null
-      : h("p", { class: "cp-caveat" }, `${DISCLAIMER} `, h("span", { class: "nw" }, "· ", h("a", { href: "#/cp?sec=legal" }, "Legal")));
-    const right = h("div", { class: "cp-hero-r" }, scoreboard(D), caveat);
+        go("#/cp?tab=method", "How it works"), go("#/cp?tab=method&sec=verify", "Check the record"),
+        go("#/cp?tab=method&sec=about", "Who built it")));
+    const right = h("div", { class: "cp-hero-r" }, scoreboard(D));
     return h("section", { class: "cp-hero", "data-sec": "hero", "aria-labelledby": "h-hero" },
       h("div", { class: "cp-wrap cp-hero-in" }, text, right));
   }
@@ -249,8 +284,13 @@
     const today = nd && nd === todayBerlin();
     const ndFig = !nd ? "—" : today ? "Today" : wday(nd);
     const ndDet = !nd ? "" : `${today ? `${wday(nd)}, ` : ""}${partOfDay(nd)}, on ${isWed(nd) ? "the day's" : "Friday's"} closes`;
-    const cell = (label, fig, det) => h("div", { class: "cp-cell" },
-      h("p", { class: "cp-label" }, label), h("p", { class: "cp-cfig" }, fig), h("p", { class: "cp-det" }, det));
+    /* Positions and Next decision open the tab that says more (Holdings, Decisions) */
+    const cell = (label, fig, det, go) => (go
+      ? h("a", { class: "cp-cell cp-cell-go", href: go[0] }, h("p", { class: "cp-label" }, label, h("span", { class: "cp-go", "aria-hidden": "true" }, " →")),
+        h("p", { class: "cp-cfig" }, fig), h("p", { class: "cp-det" }, det), h("span", { class: "sr-only" }, `, ${go[1]}`))
+      : h("div", { class: "cp-cell" },
+        h("p", { class: "cp-label" }, label), h("p", { class: "cp-cfig" }, fig), h("p", { class: "cp-det" }, det)));
+    const toHold = ["#/cp?tab=holdings", "see the holdings"], toDec = ["#/cp?tab=decisions", "see the decisions"];
     let fig, sub, cells, asof;
     if (live) {
       const vis = h("span", { "aria-hidden": "true" }, m$(s.value));
@@ -263,8 +303,8 @@
       cells = [
         cell("S&P 500 ETF", tn(s.bench_return, `${arrow(s.bench_return)} ${sp(s.bench_return)}`), `same days, same ${usd0.format(s.capital)}`),
         cell("Difference", h("span", { class: tone(d) || null, title: "percentage points" }, ptsTxt(d)), "Claude minus the ETF"),
-        cell("Next decision", ndFig, ndDet),
-        cell("Positions", String(s.positions), `cash ${wp(s.cash_weight)}${ok(lim.cash_max) ? ` · limit ${p0(lim.cash_max)}` : ""}`),
+        cell("Next decision", ndFig, ndDet, toDec),
+        cell("Positions", String(s.positions), `cash ${wp(s.cash_weight)}${ok(lim.cash_max) ? ` · limit ${p0(lim.cash_max)}` : ""}`, toHold),
       ];
       asof = `valued ${day(s.as_of)} · ~23:00 Berlin · session ${n ?? "—"} · Lang & Schwarz indicative prices`;
     } else {
@@ -273,8 +313,8 @@
       const td = s.pending ? tradeDay(s.pending.decided_on) : null;
       cells = [
         cell("S&P 500 ETF", "—", "starts with the first fills"), cell("Difference", "—", "Claude minus the ETF"),
-        cell("Next decision", ndFig, ndDet),
-        s.pending ? cell("Positions", String(s.pending.names), `first orders ${wday(td)}`) : cell("Positions", "0", "cash 100%"),
+        cell("Next decision", ndFig, ndDet, toDec),
+        s.pending ? cell("Positions", String(s.pending.names), `first orders ${wday(td)}`, toHold) : cell("Positions", "0", "cash 100%"),
       ];
       asof = s.pending ? `first orders ${wday(td)}, 20:15 Berlin · market-on-close` : `not invested yet · first decision ${wday(nd)}`;
     }
@@ -285,10 +325,8 @@
       h("p", { class: "cp-asof" }, asof));
     return box;
   }
-  const chipNav = () => h("nav", { class: "cp-index cp-wrap", "aria-label": "On this page" },
-    h("ul", {}, SECS.map(([id, label]) => h("li", {}, h("a", { href: `#/cp?sec=${id}` }, label)))));
 
-  /* ---------------------------------------------------------------- 01 record: chart, readout, track record */
+  /* ---------------------------------------------------------------- Overview › Record: chart, readout, track record */
   let CH = null;                                 // the chart's state: data, unit, the live chart; redrawn on unit, theme or width
   function cpChartOptions(mode) {
     const pct = mode === "pct";
@@ -321,7 +359,7 @@
     };
     for (const u of ups) {
       if (u.filled_on) add(u.filled_on, `${u.orders} orders filled · ${u.venue ? "Interactive Brokers demo" : "simulated"}`, u);
-      const what = u.pending ? `orders scheduled ${wday(tradeDay(u.date))}` : u.filled_on ? "filled later"
+      const what = scheduled(u) ? `orders scheduled ${wday(tradeDay(u.date))}` : u.filled_on ? "filled later"
         : u.status === "ok" ? "no orders" : "rejected by the rules";
       add(u.date, `Decision on these closes · ${what}`, u);
     }
@@ -344,12 +382,13 @@
       h("span", { class: "cp-ro-item" }, "Gap", h("b", { class: tone(gapPts(r, rb)) || null }, ptsTxt(gapPts(r, rb)))),
       C.marks ? h("span", { class: "cp-ro-key" }, C.marks.dec ? h("span", {}, h("span", { class: "k-dec" }, "●"), " decision") : null,
         C.marks.fill ? h("span", {}, h("span", { class: "k-fill" }, "▲"), " fills") : null) : null,
-      h("p", { class: "cp-ro-event" }, ev && i != null ? `${ev.text} · click the chart to read it` : ""));
+      h("p", { class: "cp-ro-event" }, ev && i != null ? `${ev.text} · click to read it in Decisions` : ""));
     C.plot.classList.toggle("has-event", !!(ev && i != null));
   }
   function drawChart() {
     const C = CH;
     if (!C || !C.plot.isConnected || C.pts.length < 2) return;
+    if (!C.plot.clientWidth) return;               // its tab is hidden: showTab() draws it when Overview is shown
     const chart = makeChart(C.plot, { euro: false });
     C.chart = chart;
     if (!chart) return;
@@ -391,12 +430,7 @@
     });
     chart.subscribeClick((p) => {
       const ev = p && p.time ? C.events.get(timeKey(p.time)) : null;
-      const li = ev && document.getElementById(`decision-${ev.u.date}`);
-      if (!li) return;
-      if (li.hidden) revealDecisions();         // an older decision folded under "Show all": unfold first
-      li.scrollIntoView({ behavior: still() ? "auto" : "smooth", block: "start" });
-      const hd = li.querySelector(".cp-rail-h");
-      if (hd) hd.focus({ preventScroll: true });
+      if (ev) openDecision(ev.u.date);
     });
     if (C.range && C.range !== "all") chart.timeScale().setVisibleRange({ from: C.range, to: C.pts[C.pts.length - 1][0] });
     else chart.timeScale().fitContent();
@@ -444,7 +478,7 @@
     const cap = (cv && cv.capital) || (s && s.capital);
     const title = live && n >= 2 ? recordTitle(s, pts, cap) : "The record starts with the first fills";
     const amount = ok(cap) ? usd0.format(cap) : "amount";
-    const head = secHead("01 — Record", "record", title,
+    const head = secHead("Record", "record", title,
       `The paper portfolio's value after each session, next to the same ${amount} invested in the S&P 500 ETF on the same days.`);
     if (!cv) return sec("record", head, h("div", { class: "cp-card" }, failed(D.err.cv)));
     const plot = h("div", { class: "cp-plot" });
@@ -493,6 +527,10 @@
       more("Show the numbers", data));
     return sec("record", head, card, trackRecord(D, false));
   }
+  /* the Claude and ETF column heads of the record's tables (short names on phones) */
+  const colHead = (bench, long, short) => h("th", { scope: "col" }, h("span", { class: "cp-trh" },
+    h("i", { class: `cp-sw sm${bench ? " bench" : ""}` }), h("span", { class: "lg" }, long), h("span", { class: "sm" }, short)));
+  const sg = (x) => (ok(x) ? tn(x, sp(x)) : "—");
   function trackRecord(D, empty) {
     const st = (D.cv && D.cv.stats) || {}, s = D.s || {};
     const n = st.sessions || 0;
@@ -503,27 +541,19 @@
       left.append(h("p", { class: "cp-sub" }, `After ${plural(n, "session")} the record is too short for statistics. They start at 5 sessions.`));
     }
     else {
-      const locked = n < 20;
-      left.append(h("p", { class: "cp-sub" }, locked ? `After ${n} sessions the record is too short to judge skill.`
+      left.append(h("p", { class: "cp-sub" }, n < 20 ? `After ${n} sessions the record is too short to judge skill.`
         : `After ${n} sessions. Past results do not predict future results.`));
       const row = (label, a, b) => h("tr", {}, h("th", { scope: "row" }, label), h("td", {}, a), h("td", {}, b));
-      const sg = (x) => (ok(x) ? tn(x, sp(x)) : "—");
-      const colHead = (bench, long, short) => h("th", { scope: "col" }, h("span", { class: "cp-trh" },
-        h("i", { class: `cp-sw sm${bench ? " bench" : ""}` }), h("span", { class: "lg" }, long), h("span", { class: "sm" }, short)));
+      /* drawdown, volatility and the ratios are in the risk panel below (29 Oct 2026). Claude's return counts from its
+         fills, the ETF's from the first valuation (cp_book.mark sets it to the capital there): the second row measures
+         both from that valuation, like for like */
       const body = [
         row(`Return since ${day(s.start || (D.cv && D.cv.start) || "")}`, sg(st.return), sg(st.bench_return)),
-        row("Worst fall from a high", sg(st.max_drawdown), sg(st.bench_max_drawdown)),
+        ok(st.return_from_first_mark) ? row("Return from the first valuation", sg(st.return_from_first_mark),
+          sg(st.bench_return_from_first_mark)) : null,
         row("Best day", sg(st.best_day), sg(st.bench_best_day)),
         row("Worst day", sg(st.worst_day), sg(st.bench_worst_day)),
       ];
-      /* annualized figures wait for 20 sessions: one row says so for both columns */
-      if (locked) {
-        body.push(h("tr", { class: "cp-tr-lock" }, h("td", { colspan: 3 },
-          h("span", { class: "cp-lock" }, lockIc(), "Annualized figures appear at 20 sessions"))));
-      } else {
-        body.push(row("Volatility, annualized", wp(st.volatility), wp(st.bench_volatility)),
-          row("Return / volatility", n2(st.sharpe_like), n2(st.bench_sharpe_like)));
-      }
       left.append(h("table", { class: "cp-tr" }, h("caption", { class: "sr-only" }, "Track record: Claude Portfolio against the S&P 500 ETF"),
         h("thead", {}, h("tr", {}, h("th", { scope: "col" }, h("span", { class: "sr-only" }, "Measure")),
           colHead(false, "Claude Portfolio", "Claude"), colHead(true, "S&P 500 ETF", "ETF"))),
@@ -536,18 +566,104 @@
         h("dt", {}, "Commissions paid"), h("dd", {}, m$(s.fees_paid), h("span", { class: "ink3" }, ` on ${plural(s.orders || 0, "order")}`))));
     }
     const defs = [
-      ["Return", "Change in value since the start. Claude's figure is after the broker's commissions."],
-      ["Worst fall from a high", "The largest drop from a previous high, measured on the daily values."],
+      ["Return", "Change in value since the start. Claude's counts from its fills at the broker's prices, after commissions; " +
+        "the ETF's from the first valuation, after that session."],
+      ["Return from the first valuation", "Both measured from that same first valuation, like for like."],
       ["Best and worst day", "The largest one-session rise and fall."],
-      ["Volatility", "The typical size of daily moves, scaled to a year. Meaningless on a few sessions, so it waits for 20."],
-      ["Return / volatility", "Annualized return divided by volatility: a rough score of return per unit of risk."],
+      ["Risk and return", "Drawdown, volatility, beta, alpha and the other measures professionals use are in the panel below, " +
+        "each with its definition and formula. A figure appears only once the record is long enough to mean something."],
     ];
     const right = h("div", { class: "cp-card proof" }, h("h3", {}, "How to read these"),
       h("dl", { class: "cp-defs" }, defs.map(([t, d]) => h("div", {}, h("dt", {}, t), h("dd", {}, d)))));
-    return h("div", { class: `cp-two${empty ? " is-empty" : ""}` }, left, right);
+    return [h("div", { class: `cp-two${empty ? " is-empty" : ""}` }, left, right), riskPanel(D)];
   }
 
-  /* ---------------------------------------------------------------- 02 holdings */
+  /* ---------------------------------------------------------------- Overview › Record: risk and return against the ETF
+     29 Oct 2026, the owner's request (a portfolio manager's advice): the measures professionals expect, "just to show
+     they are there". Every row shows its name and a one-line definition from the start; a figure appears only when it
+     means something: beta from 5 daily returns (with their n), the annualized measures from 20 sessions
+     (cp_api._risk sends null before, so no figure from a handful of days leaves the app); drawdown from 5 sessions, like
+     the track record. The exact formulas are behind "How these are computed"; the risk-free rate used is in the source line. */
+  const RISK_FROM = { rel: 5, annual: 20, stats: 5 };
+  const RISK_OWN = [
+    ["volatility", "Volatility", "How widely the value swings from day to day, scaled to a year.", "annual", (x) => unsigned(x, fmt.p2)],
+    ["max_drawdown", "Max drawdown", "The largest fall from a previous high, on the daily values.", "stats", sg],
+    ["sharpe", "Sharpe ratio", "Return above the risk-free rate for each unit of volatility, per year.", "annual", (x) => unsigned(x, fmt.n2)],
+  ];
+  const RISK_REL = [
+    ["beta", "Beta", "How much Claude's value tends to move when the ETF moves 1%.", "rel", (x) => unsigned(x, fmt.n2)],
+    ["alpha", "Jensen's alpha", "Return per year beyond what the ETF's moves and Claude's beta explain.", "annual", sg],
+    ["tracking_error", "Tracking error", "How far the daily returns stray from the ETF's, scaled to a year.", "annual",
+      (x) => unsigned(x, fmt.p2)],
+    ["information_ratio", "Information ratio", "Return ahead of the ETF for each unit of tracking error, per year.", "annual",
+      (x) => unsigned(x, fmt.n2)],
+  ];
+  /* the formulas cp_api._risk_math and _stats compute, in the same notation */
+  const RISK_FORMULAS = [
+    ["Daily returns", "r = value(t) / value(t − 1) − 1, for Claude (rp) and the ETF (rb), on the sessions both have"],
+    ["Risk-free rate", "rf = (1 + y)^(1/252) − 1 a day, y = the latest US 3-month Treasury bill rate (discount basis, FRED DTB3)"],
+    ["sd, var, cov", "sample statistics of the daily returns (divided by n − 1)"],
+    ["Volatility", "sd(r) × √252"],
+    /* no-break spaces keep the bracket in one piece where the line wraps (phones) */
+    ["Max drawdown", "min over t of [\u00a0value(t)\u00a0/\u00a0peak(t)\u00a0−\u00a01\u00a0], peak(t) = the highest value up to and including t"],
+    ["Sharpe ratio", "mean(r − rf) / sd(r − rf) × √252"],
+    ["Beta", "cov(rp, rb) / var(rb)"],
+    ["Jensen's alpha", "252 × [ mean(rp − rf) − beta × mean(rb − rf) ]"],
+    ["Tracking error", "sd(rp − rb) × √252"],
+    ["Information ratio", "252 × mean(rp − rb) / tracking error"],
+  ];
+  function riskPanel(D) {
+    const st = (D.cv && D.cv.stats) || {}, rk = st.risk || {};
+    const sessions = rk.sessions ?? st.sessions ?? 0, n = rk.n ?? Math.max(0, sessions - 1);
+    const toGo = Math.max(0, RISK_FROM.annual - sessions);
+    const shown = (gate) => (gate === "rel" ? n >= RISK_FROM.rel : gate === "annual" ? sessions >= RISK_FROM.annual
+      : sessions >= RISK_FROM.stats);
+    /* a measure not shown yet: the cell says from when (the sessions to go are said once, in the subtitle) */
+    const gated = (gate, span) => h("td", { class: "is-gated", colspan: span > 1 ? span : null },
+      h("span", { class: "cp-lock" }, lockIc(), gate === "rel" ? `from ${RISK_FROM.rel} daily returns` : `from ${RISK_FROM[gate]} sessions`));
+    const name = (label, def) => h("th", { scope: "row" }, h("span", { class: "cp-rk-name" }, label), h("span", { class: "cp-rk-def" }, def));
+    const src = (key) => (key === "volatility" || key === "max_drawdown" ? [st[key], st[`bench_${key}`]] : [rk[key], rk[`bench_${key}`]]);
+    const own = RISK_OWN.map(([key, label, def, gate, f]) => {
+      const [a, b] = src(key);
+      return h("tr", {}, name(label, def), shown(gate) ? [h("td", {}, f(a)), h("td", {}, f(b))] : gated(gate, 2));
+    });
+    const rel = RISK_REL.map(([key, label, def, gate, f]) => h("tr", {}, name(label, def), shown(gate)
+      ? h("td", {}, f(rk[key]), gate === "rel" ? h("span", { class: "cp-rk-n" }, `n = ${n} daily returns`) : null)
+      : gated(gate, 1)));
+    const t1 = h("table", { class: "cp-tr cp-rk" }, h("caption", { class: "sr-only" }, "Risk and return of each: Claude Portfolio and the S&P 500 ETF"),
+      h("thead", {}, h("tr", {}, h("th", { scope: "col" }, h("span", { class: "sr-only" }, "Measure")),
+        colHead(false, "Claude Portfolio", "Claude"), colHead(true, "S&P 500 ETF", "ETF"))),
+      h("tbody", {}, own));
+    const t2 = h("table", { class: "cp-tr cp-rk" }, h("caption", { class: "sr-only" }, "Claude Portfolio measured against the S&P 500 ETF"),
+      h("thead", {}, h("tr", {}, h("th", { scope: "col" }, h("span", { class: "sr-only" }, "Measure")),
+        h("th", { scope: "col" }, "Claude vs ETF"))),
+      h("tbody", {}, rel));
+    const sub = sessions >= RISK_FROM.annual ? `After ${sessions} sessions, on n = ${n} daily returns. Past results do not predict future results.`
+      : n >= RISK_FROM.rel ? `After ${plural(sessions, "session")}: beta on n = ${n} daily returns. The annualized ` +
+        `measures need ${RISK_FROM.annual} sessions${toGo ? ` (${toGo} to go)` : ""}; on a handful of days they would describe noise, not skill.`
+        : `The measures fill in as the record grows: beta from ${RISK_FROM.rel} daily returns, the annualized ones ` +
+          `from ${RISK_FROM.annual} sessions.`;
+    const rf = rk.rf;
+    const fred = extLink("https://fred.stlouisfed.org/series/DTB3", "FRED series DTB3");
+    const rfLine = !rf ? [] : rf.status === "unavailable" ? [" Risk-free rate unavailable, 0% used."]
+      : [` Risk-free rate for the Sharpe ratio and alpha: ${fmt.n2.format(rf.pct)}% a year (discount basis), the US ` +
+        `3‑month Treasury bill on ${rf.date ? day(rf.date) : "the latest date"} (`, fred,
+        rf.status === "cached" ? `; the copy fetched ${rf.fetched_on ? day(rf.fetched_on) : "earlier"}, as ` +
+          `${rf.refreshing ? "today's update from FRED had not arrived yet" : "FRED could not be reached"}).` : ")."];
+    const how = more("How these are computed", [
+      h("dl", { class: "cp-rk-f" }, RISK_FORMULAS.map(([t, f]) => h("div", {}, h("dt", {}, t), h("dd", {}, h("code", {}, f))))),
+      h("p", {}, `Shown only when they can mean something: beta from ${RISK_FROM.rel} daily returns, the ` +
+        `annualized measures from ${RISK_FROM.annual} sessions; 252 sessions make a year. Claude's values are after commissions.`),
+    ]);
+    return h("div", { class: "cp-card cp-risk" }, h("h3", {}, "Risk and return vs the S&P 500 ETF"), h("p", { class: "cp-sub" }, sub),
+      h("div", { class: "cp-rk-grid" },
+        h("div", { class: "cp-rk-g" }, h("p", { class: "cp-label" }, "Each on its own"), t1),
+        h("div", { class: "cp-rk-g" }, h("p", { class: "cp-label" }, "Claude against the ETF"), t2)),
+      h("p", { class: "cp-src" }, `n = ${plural(n, "daily simple return")}, each from two consecutive sessions with both values.`,
+        ...rfLine), how);
+  }
+
+  /* ---------------------------------------------------------------- Holdings tab */
   function setOpen(btn, det, open) {
     if (!det) return;
     btn.setAttribute("aria-expanded", String(open));
@@ -588,7 +704,10 @@
   const wbar = (w, cap, cls = "") => h("span", { class: "cp-wt" }, h("span", { class: "cp-bar cap", "aria-hidden": "true" },
     h("i", { class: cls || null, style: `width:${Math.max(0, Math.min(1, ok(cap) && cap > 0 ? w / cap : w)) * 100}%` })), wp(w));
   const gainCell = (g, gp) => h("span", { class: "cp-gain" }, tn(g, s$(g)), h("small", { class: tone(gp) || null }, sp(gp, fmt.p1)));
-  function nextOrders(s, hd) {
+  /* the pending decision's orders. Before the first fills: Claude's first picks, every row new. Once live: only the rows
+     that change (the decision's own new, closed and resized stocks; without it, any target off its current weight),
+     with every target behind "Show all"; a decision that changes nothing says so in one line. u: the pending decision */
+  function nextOrders(s, hd, u) {
     const p = s.pending, live = s.state === "live";
     const held = new Map(((hd && hd.rows) || []).map((r) => [r.ticker, r]));
     const tgt = new Set(p.targets.map((r) => r.ticker));
@@ -597,20 +716,32 @@
     const chg = (r) => (r.out ? "Out" : !live || !r.now ? "New"
       : Math.abs(r.weight - r.now) < 0.0005 ? "—" : `${sign((r.weight - r.now) * 100, fmt.n1)} pts`);
     const cols = live ? 4 : 3;
-    const body = rows.flatMap((r) => holdRow(r, [live ? h("td", { class: "num c-now" }, wp(r.now)) : null,
-      h("td", { class: "num c-gain" }, r.out ? "—" : wp(r.weight)), h("td", { class: "num c-chg c-wt" }, chg(r))], null, cols, "th-next"));
+    const table = (list, prefix, caption) => {
+      const body = list.flatMap((r) => holdRow(r, [live ? h("td", { class: "num c-now" }, wp(r.now)) : null,
+        h("td", { class: "num c-gain" }, r.out ? "—" : wp(r.weight)), h("td", { class: "num c-chg c-wt" }, chg(r))], null, cols, prefix));
+      return tableRoles(h("table", { class: "cp-tbl" }, h("caption", { class: "sr-only" }, caption),
+        h("thead", {}, h("tr", {}, h("th", { scope: "col" }, "Company"), live ? h("th", { scope: "col", class: "num c-now" }, "Now") : null,
+          h("th", { scope: "col", class: "num" }, "Target"), h("th", { scope: "col", class: "num" }, "Change"))),
+        h("tbody", {}, body),
+        h("tfoot", {}, h("tr", {}, h("td", { class: "c-co" }, h("b", {}, "Cash")), live ? h("td", { class: "num c-now" }, wp(s.cash_weight)) : null,
+          h("td", { class: "num c-gain" }, wp(p.cash)), h("td", { class: "num c-x" }, "")))));
+    };
     const td = tradeDay(p.decided_on);
-    const tbl = h("table", { class: "cp-tbl" }, h("caption", { class: "sr-only" }, "Next orders: target weights"),
-      h("thead", {}, h("tr", {}, h("th", { scope: "col" }, "Company"), live ? h("th", { scope: "col", class: "num c-now" }, "Now") : null,
-        h("th", { scope: "col", class: "num" }, "Target"), h("th", { scope: "col", class: "num" }, "Change"))),
-      h("tbody", {}, body),
-      h("tfoot", {}, h("tr", {}, h("td", { class: "c-co" }, h("b", {}, "Cash")), live ? h("td", { class: "num c-now" }, wp(s.cash_weight)) : null,
-        h("td", { class: "num c-gain" }, wp(p.cash)), h("td", { class: "num c-x" }, ""))));
-    return h("div", { class: "cp-card cp-flush cp-next" },
-      h("div", { class: "cp-tbar" }, h("div", {}, h("h3", {}, live ? "Next orders" : "Claude's first picks"),
-        h("p", { class: "cp-sub" }, `Decided on the ${dayShort(p.decided_on)} closes. Market-on-close orders are scheduled for ` +
-          `${wday(td)}, 20:15 Berlin, at the Interactive Brokers demo account.`))),
-      tableRoles(tbl));
+    const bar = (sub, title) => h("div", { class: "cp-tbar" }, h("div", {}, h("h3", {}, title || (live ? "Next orders" : "Claude's first picks")),
+      h("p", { class: "cp-sub" }, sub)));
+    const sched = `Market-on-close orders are scheduled for ${wday(td)}, 20:15 Berlin, at the Interactive Brokers demo account.`;
+    const card = (...kids) => h("div", { class: "cp-card cp-flush cp-next" }, ...kids);
+    if (!live) return card(bar(`Decided on the ${dayShort(p.decided_on)} closes. ${sched}`), table(rows, "th-next", "Claude's first picks: target weights"));
+    const trades = u ? new Set([...(u.new || []), ...(u.closed || []), ...(u.resized || [])].map((x) => x.ticker)) : null;
+    const moving = rows.filter((r) => (trades ? trades.has(r.ticker) : chg(r) !== "—"));
+    const all = more(`Show all ${plural(p.targets.length, "target")}`, table(rows, "th-tgt", "Next orders: every target weight"),
+      { cls: "cp-next-all" });
+    if (!moving.length) {
+      return card(bar(`Decided on the ${dayShort(p.decided_on)} closes: nothing to trade. Next decision ${nextWhen(s.next_decision)}.`, "No orders"),
+        h("p", { class: "cp-next-none" }, `No weight changes: all ${plural(p.targets.length, "holding")} are kept.`), all);
+    }
+    return card(bar(`Decided on the ${dayShort(p.decided_on)} closes. ${sched}`),
+      table(moving, "th-next", "Next orders: the weights that change"), all);
   }
   function holdTable(s, hd, lim, sameSince) {
     const rows = hd.rows || [];
@@ -691,7 +822,7 @@
   }
   function holdings(D) {
     const s = D.s, hd = D.hd;
-    if (!s) return sec("holdings", secHead("02 — Holdings", "holdings", "Holdings"), failed(D.err.s));
+    if (!s) return sec("holdings", secHead("Holdings", "holdings", "Holdings", null, null, 1), failed(D.err.s));
     const live = s.state === "live", lim = limitsOf(s);
     const rows = (hd && hd.rows) || [];
     const sameSince = rows.length > 0 && rows.every((r) => r.since && r.since === rows[0].since);
@@ -703,22 +834,27 @@
       "Open a row to read why Claude holds the stock and the risk it is watching."
       : s.pending ? "Target weights from Claude's first decision. Open a row to read why Claude picked the stock and the risk it is " +
         "watching." : null;
-    const head = secHead("02 — Holdings", "holdings", title, dek);
+    const head = secHead("Holdings", "holdings", title, dek, null, 1);
     if (!live && !s.pending) return sec("holdings", head, framed(`Claude's first decision is due ${wday(s.next_decision)}.`));
-    const grid = h("div", { class: "cp-hold-grid" }, s.pending ? nextOrders(s, hd) : null,
-      live ? (hd ? holdTable(s, hd, lim, sameSince) : h("div", { class: "cp-card cp-holdc" }, failed(D.err.hd))) : null,
-      allocation(s, hd, lim));
+    /* the holdings first, then the allocation, then the pending decision's orders; before the first fills the picks are
+       the holdings, so they come first */
+    const pend = (s.pending && D.up && (D.up.updates || []).find((u) => u.pending && u.date === s.pending.decided_on)) || null;
+    const next = s.pending ? nextOrders(s, hd, pend) : null;
+    const grid = live
+      ? h("div", { class: "cp-hold-grid" }, hd ? holdTable(s, hd, lim, sameSince) : h("div", { class: "cp-card cp-holdc" }, failed(D.err.hd)),
+        allocation(s, hd, lim), next)
+      : h("div", { class: "cp-hold-grid" }, next, allocation(s, hd, lim));
     return sec("holdings", head, grid);
   }
 
-  /* ---------------------------------------------------------------- 03 decisions */
+  /* ---------------------------------------------------------------- Decisions tab */
   const pauseIc = () => h("span", { class: "pause", "aria-hidden": "true" });
   function statusChip(u) {
     if (u.filled_on) {
       return h("span", { class: "cp-chip ok" }, h("b", { "aria-hidden": "true" }, "✓"),
         u.venue ? "Traded at Interactive Brokers (demo)" : "Traded · simulated fill");
     }
-    if (u.pending) {
+    if (scheduled(u)) {
       return h("span", { class: "cp-chip sched" }, h("b", { "aria-hidden": "true" }, "◷"), `Orders scheduled ${wday(tradeDay(u.date))}`);
     }
     if (u.status === "ok") return h("span", { class: "cp-chip" }, pauseIc(), "Held · no orders");
@@ -730,7 +866,7 @@
     const list = [st("done", "Decided", "done"), st(u.sha256 ? "done" : "", "Fingerprinted", u.sha256 ? "done" : "skipped")];
     if (u.status !== "ok" && !u.filled_on) list.push(st("rej", "Rejected", "rejected"));
     else {
-      list.push(u.filled_on ? st("done", "Ordered", "done") : u.pending ? st("sched", "Ordered", "scheduled") : st("", "No orders", "skipped"));
+      list.push(u.filled_on ? st("done", "Ordered", "done") : scheduled(u) ? st("sched", "Ordered", "scheduled") : st("", "No orders", "skipped"));
       list.push(st(u.filled_on ? "done" : "", "Filled and booked", u.filled_on ? "done" : "skipped"));
     }
     return h("ol", { class: "cp-stages", "aria-label": "Stages" }, list);
@@ -749,7 +885,7 @@
      one that would have brought a weight back inside a limit (a trim to the cap) */
   function skippedNote(u, s, names) {
     const sk = u.skipped_small || [];
-    if (u.status !== "ok" || u.orders || u.pending || u.filled_on || !sk.length) return null;
+    if (u.status !== "ok" || u.orders || scheduled(u) || u.filled_on || !sk.length) return null;
     const lim = limitsOf(s), mc = lim.min_change;
     const crosses = (x) => (ok(lim.weight_max) && x.from > lim.weight_max && x.to <= lim.weight_max)
       || (ok(lim.weight_min) && x.from < lim.weight_min && x.to >= lim.weight_min);
@@ -759,8 +895,9 @@
       : "Weight changes under the minimum are not traded (rule)";
     const shown = meant.filter((x) => wp(x.from) !== wp(x.to)).slice(0, 3)
       .map((x) => `${names[x.ticker] ? `${names[x.ticker]} (${x.ticker})` : x.ticker} ${wp(x.from)} → ${wp(x.to)}`);
-    return h("p", { class: "cp-skipnote" }, shown.length ? `Not traded: ${shown.join(", ")}. ${rule}, so this decision placed no orders.`
-      : `${rule}; every change in this decision was smaller, so it placed no orders.`);
+    const placed = u.pending ? "places" : "placed";
+    return h("p", { class: "cp-skipnote" }, shown.length ? `Not traded: ${shown.join(", ")}. ${rule}, so this decision ${placed} no orders.`
+      : `${rule}; every change in this decision was smaller, so it ${placed} no orders.`);
   }
   function decisionCard(u, i, count, s, names) {
     const k = String(count - i).padStart(2, "0");
@@ -816,7 +953,7 @@
     if (disc.length) body.append(h("div", { class: "cp-disc" }, disc));
     const fill = u.filled_on ? (u.venue ? `filled ${dayShort(u.filled_on)} at Interactive Brokers (demo) · ${plural(u.orders, "order")}`
       : `filled ${dayShort(u.filled_on)} · simulated at the Lang & Schwarz session end · ${plural(u.orders, "order")}`)
-      : u.pending ? `orders scheduled ${wday(tradeDay(u.date))}` : "no orders";
+      : scheduled(u) ? `orders scheduled ${wday(tradeDay(u.date))}` : "no orders";
     body.append(h("div", { class: "cp-proof" },
       h("p", {}, u.decided_at ? h("span", {}, `decided ${utcStamp(u.decided_at)}`) : null,
         u.sha256 ? h("span", { class: "cp-hashrow" }, "SHA-256", hashRow(u.sha256, `decision ${k}`)) : null),
@@ -835,22 +972,24 @@
     const ups = D.up ? D.up.updates || [] : null;
     const trades = ups ? ups.filter((u) => u.filled_on).length : 0;
     const orders = ups ? ups.reduce((a, u) => a + (u.filled_on ? u.orders || 0 : 0), 0) : 0;
-    const head = secHead("03 — Decisions", "decisions", "Every decision, in Claude's words",
+    const head = secHead("Decisions", "decisions", "Every decision, in Claude's words",
       "Newest first. Each decision carries the time it was made, its fingerprint and the fills that followed.",
       ups && ups.length ? h("p", { class: "cp-sum" },
-        `${plural(ups.length, "decision")} · ${trades} with trades · ${plural(orders, "order")} filled`) : null);
+        `${plural(ups.length, "decision")} · ${trades} with trades · ${plural(orders, "order")} filled`) : null, 1);
     DEC = null;
     if (!ups) return sec("decisions", head, failed(D.err.up));
     if (!ups.length) return sec("decisions", head, framed("No decision yet.", D.s ? `The first one is due ${wday(D.s.next_decision)}.` : null));
     const names = {};
     ((D.hd && D.hd.rows) || []).forEach((r) => { if (r.name) names[r.ticker] = r.name; });
     ((D.s && D.s.pending && D.s.pending.targets) || []).forEach((r) => { if (r.name && !names[r.ticker]) names[r.ticker] = r.name; });
+    /* the tab is the decisions: all of them show, up to 8; beyond that the newest 6 and a "Show all" button */
+    const fold = ups.length > 8;
     const list = h("ol", { class: "cp-log" }, ups.map((u, i) => {
       const li = decisionCard(u, i, ups.length, D.s, names);
-      if (i >= 3) li.hidden = true;
+      if (fold && i >= 6) li.hidden = true;
       return li;
     }));
-    const all = ups.length > 3
+    const all = fold
       ? h("button", { class: "cp-btn wide-sm", type: "button", style: "margin-top:16px" }, `Show all ${ups.length} decisions`) : null;
     DEC = { list, all };
     if (all) {
@@ -862,7 +1001,7 @@
     return sec("decisions", head, list, all);
   }
 
-  /* ---------------------------------------------------------------- 04 how it works */
+  /* ---------------------------------------------------------------- How it works tab: the pipeline and the week */
   function method(D) {
     const s = D.s || {}, lim = limitsOf(s);
     const searches = ok(lim.web_searches_max) ? `may run up to ${lim.web_searches_max} web searches` : "may run a few web searches";
@@ -888,9 +1027,12 @@
         c ? h("span", { class: "cp-conn" }, h("span", { class: "sr-only" }, "Passes on: "), h("span", {}, c), arrowIc()) : null))),
       h("figcaption", {}, h("b", {}, "Fig. 1"), "— How a decision becomes a trade. Times are Berlin time. If the broker cannot be " +
         "reached, a fill is simulated at that day's Lang & Schwarz session end (mid ± 0.05%, $1 per order) and is marked as simulated."));
-    return sec("method", secHead("04 — How it works", "method", "How a decision becomes a trade",
+    /* the tab's own index: each part of How it works in one click (the links stay on this tab, at that part) */
+    const idx = h("nav", { class: "cp-idx", "aria-label": "Parts of How it works" }, h("ul", {}, METHOD_PARTS.map(([id, t]) =>
+      h("li", {}, h("a", { href: `#/cp?tab=method&sec=${id}` }, t)))));
+    return sec("method", secHead("How it works", "method", "How a decision becomes a trade",
       "Five steps, twice a week. Claude sets the target weights and explains them; the program enforces the rules, talks to " +
-      "the broker and keeps the record."),
+      "the broker and keeps the record.", idx, 1),
     fig, h("p", { class: "cp-note cp-gapnote" }, "A Wednesday decision trades on Thursday and a Saturday decision on Monday, at the " +
       "US close. Prices move in between; that gap is part of the record."),
     week(s));
@@ -915,7 +1057,7 @@
       h("p", { class: "cp-cap" }, "Daily values use Lang & Schwarz indicative prices after the session. US closing auction: 16:00 New York."));
   }
 
-  /* ---------------------------------------------------------------- 05 verify */
+  /* ---------------------------------------------------------------- How it works tab: verify */
   function verify(D) {
     const s = D.s || {}, ups = (D.up && D.up.updates) || [];
     const latest = ups[0];
@@ -942,9 +1084,9 @@
       h("pre", {}, h("code", {}, "jq -j '.updates[0].fingerprinted' decisions.json | shasum -a 256")),
       h("p", {}, "That shows the fingerprints match the published data. To check that a decision was not edited after the fact, " +
         "compare its fingerprint with the same decision in earlier versions of this site on GitHub."),
-    ], { open: isWide() }));
+    ]));
     const orders = (u) => (u.filled_on ? `${u.orders} filled ${dayShort(u.filled_on)} · ${u.venue ? "IB demo" : "simulated"}`
-      : u.pending ? `scheduled ${wday(tradeDay(u.date))}` : "no orders");
+      : scheduled(u) ? `scheduled ${wday(tradeDay(u.date))}` : "no orders");
     const checks = [];
     let table = null;
     if (ups.length) {
@@ -965,9 +1107,12 @@
       const status = h("p", { class: "cp-sub", role: "status" },
         can ? "Recompute every fingerprint from the published data, here in your browser." : "");
       const btn = can ? h("button", { class: "cp-btn", type: "button" }, "Recompute in this browser") : null;
+      /* the per-decision list is folded (the tab is long); recomputing opens it, so each match shows next to its row */
+      const fold = more(`Show each decision's fingerprint (${ups.length})`, tableRoles(tbl), { cls: "cp-fpt-more" });
       if (btn) {
         btn.addEventListener("click", async () => {
           btn.disabled = true;
+          fold.open = true;
           let good = 0, n = 0;
           for (const [text, want, where] of checks) {
             if (!text || !want) continue;
@@ -983,7 +1128,7 @@
         });
       }
       table = h("div", { class: "cp-card cp-flush cp-fpt" },
-        h("div", { class: "cp-tbar" }, h("div", {}, h("h3", {}, "Decisions and their fingerprints"), status), btn), tableRoles(tbl));
+        h("div", { class: "cp-tbar" }, h("div", {}, h("h3", {}, "Decisions and their fingerprints"), status), btn), fold);
     }
     const st = window.BussolaStatic;
     const built = st && st.index && st.index.built ? berlinStamp(st.index.built, true) : null;
@@ -993,16 +1138,17 @@
       h("div", { class: "cp-dl" }, files.map(([n, d]) => h("button", {
         class: "cp-btn mono", type: "button", disabled: d ? null : true, onclick: () => download(n, d, s.as_of),
       }, `${n}.json`))),
-      h("p", { class: "cp-dl-note" }, "The same answers the page is built from. Paper money; no personal data."));
-    return sec("verify", secHead("05 — Verify", "verify", "Check the record yourself",
-      "The rules, each decision and every published version of this page leave a trace that anyone can check."), steps, explain, table, data);
+      h("p", { class: "cp-dl-note" }, "The same answers the site is built from. Paper money; no personal data."));
+    return sec("verify", secHead("Verify", "verify", "Check the record yourself",
+      "The rules, each decision and every published version of this site leave a trace that anyone can check."), steps, explain, table, data);
   }
 
-  /* ---------------------------------------------------------------- 06 rules, 07 built by, legal */
+  /* ---------------------------------------------------------------- How it works tab: rules, built by, legal */
   function rules(D, n) {
     const s = D.s;
-    const head = secHead("06 — Rules", "rules", s && s.rules_version ? `Rules v${s.rules_version}, fixed before the first trade` : "The rules",
-      "Claude decides within these limits. The program fixes or rejects any decision that breaks them; fixes are listed in the decision log.");
+    const head = secHead("Rules", "rules", s && s.rules_version ? `Rules v${s.rules_version}, fixed before the first trade` : "The rules",
+      ["Claude decides within these limits. The program fixes or rejects any decision that breaks them; each fix is listed with " +
+        "its decision, under ", h("a", { href: "#/cp?tab=decisions" }, "Decisions"), "."]);
     if (!s) return sec("rules", head, failed(D.err.s));
     const mc = limitsOf(s).min_change;
     const left = h("div", { class: "cp-card" },
@@ -1034,25 +1180,27 @@
       ["Broker execution", "Market-on-close orders on an Interactive Brokers demo account; the fills are read back and booked at the " +
         "broker's prices and commission."],
       ["Measurement", "A daily valuation on Lang & Schwarz prices against the S&P 500 ETF bought on the same days, with drawdown, " +
-        "daily extremes and, from 20 sessions, volatility."],
+        "daily extremes, beta and, from 20 sessions, volatility, Sharpe ratio, alpha, tracking error " +
+        "and information ratio."],
       ["Publishing with full history", "A static snapshot on GitHub Pages, rebuilt after each update; every published version stays " +
         "in the branch history."],
     ];
     const STACK = ["Python", "Claude Code, headless", "Interactive Brokers API", "Lang & Schwarz prices", "TradingView charts", "GitHub Pages"];
     const card = who.name ? h("div", { class: "cp-card proof cp-author" },
       h("p", { class: "cp-label" }, "Author"),
-      h("p", { class: "cp-name" }, who.url ? h("a", { href: who.url, rel: "author noopener", target: "_blank" }, who.name, newTab()) : who.name),
+      /* the name is the profile link (one link, not a name and a button to the same page), and says where it goes */
+      h("p", { class: "cp-name" }, who.url ? h("a", { href: who.url, rel: "author noopener", target: "_blank" }, who.name,
+        h("span", { class: "cp-via" }, ` · ${profileSite(who.url)} ↗`), newTab()) : who.name),
       h("p", { class: "cp-role" }, "Designed, built and operated end to end: the brief, the agent run, the rules engine, the broker " +
         "connection, the valuation and this site."),
       h("div", { class: "cp-alinks" },
-        who.url ? extLink(who.url, "GitHub profile ↗", "cp-btn") : null,
         extLink(REPO_URL, "Site repository ↗", "cp-btn"),
         extLink(HISTORY_URL, "Version history ↗", "cp-btn")),
       h("div", { class: "cp-stackw" }, h("p", { class: "cp-label" }, "Stack"),
         h("ul", { class: "cp-stack" }, STACK.map((x) => h("li", {}, x))))) : null;
     const pieces = h("div", { class: "cp-card" }, h("h3", {}, "What this shows"),
       h("dl", { class: "cp-pieces" }, P.map(([t, d]) => h("div", {}, h("dt", {}, t), h("dd", {}, d)))));
-    return sec("about", secHead("07 — Built by", "about", "A one-person project, built with Claude Code",
+    return sec("about", secHead("Built by", "about", "A one-person project, built with Claude Code",
       "An AI agent, a rules engine, a broker connection and a public record, designed, built and operated end to end."),
     h("div", { class: `cp-about${card ? "" : " solo"}` }, card, pieces));
   }
@@ -1065,16 +1213,115 @@
         h("p", {}, "Rules fingerprint: ", hashRow(s.rules_hash, "the rules"))))));
   }
 
-  /* ---------------------------------------------------------------- loading state and wiring */
-  function loading() {
+  /* ---------------------------------------------------------------- loading state */
+  function loading(tab) {
     const bar = (w, ht = 14) => h("span", { class: "cp-skel line", style: `width:${w};height:${ht}px` });
-    return h("div", { class: "cp", "aria-busy": "true" },
-      h("p", { class: "sr-only", role: "status" }, "Loading the portfolio…"),
+    const body = tab === "overview" ? [
       h("section", { class: "cp-hero" }, h("div", { class: "cp-wrap cp-hero-in" },
         h("div", {}, bar("38%", 13), bar("62%", 52), bar("92%", 22), bar("80%", 22), bar("70%", 18)),
         h("div", { class: "cp-skel", style: "height:300px" }))),
-      h("div", { class: "cp-wrap" }, h("div", { class: "cp-skel", style: "height:470px;margin-top:104px" }),
-        h("div", { class: "cp-skel", style: "height:560px;margin-top:80px" })));
+      h("div", { class: "cp-wrap" }, h("div", { class: "cp-skel", style: "height:470px;margin-top:72px" }))]
+      : [h("div", { class: "cp-wrap cp-skel-tab" }, bar("14%", 13), bar("52%", 34), bar("66%", 18),
+        h("div", { class: "cp-skel", style: "height:520px;margin-top:28px" }))];
+    return h("div", { class: "cp", "aria-busy": "true" }, h("p", { class: "sr-only", role: "status" }, "Loading the portfolio…"), body);
+  }
+
+  /* ---------------------------------------------------------------- tabs
+     The header's #cp-nav links (and every other #/cp link: the logo, the hero links, "Legal") switch tabs here, without
+     loading anything. The address names the tab, so a reload opens the same tab, at its top; the plain link (#/cp) is
+     Overview. A link to a section (?sec=<id>) opens the tab that holds it, at that section. The header's tabs and the
+     logo rewrite the address (replaceState: no history entry per click); a link in the page (hero, chart marker, Legal,
+     "Next") adds one (pushState), so Back returns to where the visitor was, at the same scroll position. */
+  const T = { panels: null, cur: null, want: null, scoreOut: false };
+  /* the one-line disclaimer above every tab. The public page has its own band (#pub-disclaimer, written by publish.py);
+     the local app gets the same markup here, so both show the line at the top of every tab */
+  const band = () => ($("pub-disclaimer") ? null : h("div", { class: "pub-disclaimer", role: "note", "aria-label": "Disclaimer" },
+    h("p", {}, `${DISCLAIMER} `, h("span", { class: "nw" }, "· ", h("a", { href: "#/cp?tab=method&sec=legal" }, "Legal")))));
+  /* the end of a tab: one link on to the next tab */
+  const nextTab = (tab) => {
+    const t = TABS.find((x) => x[0] === tab);
+    return h("div", { class: "cp-wrap" }, h("p", { class: "cp-onward" },
+      h("a", { href: tabUrl(tab) }, h("span", { class: "k" }, "Next"), h("span", {}, t[1], h("span", { class: "ar", "aria-hidden": "true" }, " →")))));
+  };
+  function tabOf(params) {
+    const t = params.get("tab");
+    if (TAB_IDS.has(t)) return t;
+    return SEC_TAB[params.get("sec") || params.get("open")] || "overview";
+  }
+  const tabUrl = (tab) => (tab === "overview" ? "#/cp" : `#/cp?tab=${tab}`);
+  function markNav(tab) {
+    document.querySelectorAll("#cp-nav a[data-tab]").forEach((a) => {
+      if (a.dataset.tab === tab) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    });
+  }
+  function tabTitle(tab) {
+    const who = author();
+    const base = who.name ? `Claude Portfolio · by ${who.name}` : "Claude Portfolio";
+    const t = TABS.find((x) => x[0] === tab);
+    document.title = t && tab !== "overview" ? `${t[1]} · ${base}` : base;
+  }
+  /* the small Claude-against-the-ETF line in the header: on every tab but Overview, where the scoreboard says the same
+     thing until it is scrolled past (gone under the header). Measured on each scroll and tab switch */
+  function scorePast() {
+    const sc = $("cp-score");
+    if (!sc || !sc.getClientRects().length) return false;
+    const top = document.querySelector("header.top");       // one row or two (below 900px): its real bottom edge
+    return sc.getBoundingClientRect().bottom <= (top ? top.getBoundingClientRect().bottom : 64);
+  }
+  function syncMini() {
+    const mn = $("cp-mini");
+    if (!mn) return;
+    const on = !mn.hidden && !!T.cur && (T.cur !== "overview" || T.scoreOut);
+    mn.classList.toggle("on", on);
+    document.body.classList.toggle("mini-on", on);
+  }
+  /* show one tab. sec: a section of it to open at; target: an element of it (a decision card); y: a scroll position to
+     return to (Back). Otherwise the tab opens at its top. push: a link in the page, which gets a history entry (the
+     current one keeps its scroll position for Back). focus: false on the first render only; a switch moves focus to the
+     tab's heading (or the section's) */
+  function showTab(tab, { sec = null, target = null, y = null, push = false, focus = true } = {}) {
+    if (!T.panels || !T.panels[tab]) return;
+    const panel = T.panels[tab];
+    const prev = T.cur;
+    const url = tabUrl(tab);
+    if (location.hash !== url) {
+      const to = `${location.pathname}${location.search}${url}`;
+      if (push && prev) {
+        try { history.replaceState({ ...(history.state || {}), cpY: Math.round(window.scrollY) }, ""); } catch (_) { /* no state */ }
+        history.pushState(null, "", to);
+      } else history.replaceState(null, "", to);
+    }
+    Object.entries(T.panels).forEach(([k, p]) => { p.hidden = k !== tab; });
+    T.cur = tab;
+    document.body.dataset.cpTab = tab;             // the header's phone layout differs on Overview (cp.css)
+    markNav(tab);
+    tabTitle(tab);
+    if (prev && prev !== tab && !still()) {        // a short fade, nothing more (none at all with reduced motion)
+      panel.classList.remove("cp-fade");
+      void panel.offsetWidth;
+      panel.classList.add("cp-fade");
+    }
+    if (tab === "overview" && prev !== "overview") drawChart();   // a hidden tab has no width: drawn at its real size
+    const el = target || (sec ? panel.querySelector(`[data-sec="${CSS.escape(sec)}"]`) : null);
+    const first = panel.firstElementChild;
+    syncMini();                                    // first: on a phone the small scoreboard's band adds to the header's height
+    /* a section lands with its heading block just under the sticky header (not its padded box, which starts a section
+       gap higher); a decision card lands with its own top there */
+    if (y != null) window.scrollTo(0, y);
+    else if (el && el !== first) (el.matches(".cp-sec, .cp-legal") ? el.querySelector(".cp-head, h2") || el : el).scrollIntoView({ block: "start" });
+    else window.scrollTo(0, 0);
+    if (tab === "overview") T.scoreOut = scorePast();
+    syncMini();
+    if (!focus) return;
+    const hd = el && el !== first ? el.querySelector(".cp-rail-h, h1, h2") : panel.querySelector("h1, h2");
+    if (hd) hd.focus({ preventScroll: true });
+  }
+  /* a chart marker: the Decisions tab, at that decision (unfolded first if it was under "Show all") */
+  function openDecision(date) {
+    const li = document.getElementById(`decision-${date}`);
+    if (li && li.hidden) revealDecisions();
+    showTab("decisions", { target: li || null, push: true });
   }
   const W = { obs: [], off: [] };                  // what render() wires up, undone by leave()
   function listen(target, type, fn, opt) {
@@ -1083,32 +1330,19 @@
   }
   function onAnchor(e) {
     const a = e.target.closest && e.target.closest('a[href^="#/cp"]');
-    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const href = a.getAttribute("href");
-    const behavior = still() ? "auto" : "smooth";
-    if (href === "#/cp") {
-      e.preventDefault();
-      window.scrollTo({ top: 0, behavior });
-      history.replaceState(null, "", "#/cp");
-      return;
-    }
-    const m = /^#\/cp\?sec=([a-z-]+)$/.exec(href);
-    const target = m && document.querySelector(`#page [data-sec="${m[1]}"]`);
-    if (!target) return;
+    if (!a || !T.panels || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const q = new URLSearchParams(a.getAttribute("href").split("?")[1] || "");
     e.preventDefault();
-    const y0 = window.scrollY;
-    target.scrollIntoView({ behavior, block: "start" });
-    /* a browser that ignores smooth scrolling (some embedded views) still gets there */
-    if (behavior === "smooth") {
-      setTimeout(() => { if (window.scrollY === y0 && target.isConnected) target.scrollIntoView({ block: "start" }); }, 900);
-    }
-    const hd = target.querySelector("h2, h1");
-    if (hd) hd.focus({ preventScroll: true });
-    history.replaceState(null, "", "#/cp");          // the address stays the page's own: a reload or a shared link opens at the top
+    showTab(tabOf(q), { sec: q.get("sec") || q.get("open"), push: !a.closest("#cp-nav, a.logo") });
   }
-  function wire(root) {
+  function wire() {
     listen(document, "click", onAnchor);
-    const onScroll = () => document.body.classList.toggle("scrolled", window.scrollY > 8);
+    const onScroll = () => {
+      document.body.classList.toggle("scrolled", window.scrollY > 8);
+      if (T.cur !== "overview") return;            // a hidden scoreboard is never "scrolled past"
+      const past = scorePast();
+      if (past !== T.scoreOut) { T.scoreOut = past; syncMini(); }
+    };
     listen(window, "scroll", onScroll, { passive: true });
     onScroll();
     /* the chart drops its title tags and marker labels below NARROW_CHART: redraw when a resize or rotation crosses it */
@@ -1122,25 +1356,6 @@
       });
       ro.observe(CH.plot);
       W.obs.push(ro);
-    }
-    if (!("IntersectionObserver" in window)) return;
-    const links = [...document.querySelectorAll("#cp-nav a[data-to]")];
-    const so = new IntersectionObserver((es) => es.forEach((e) => {
-      if (!e.isIntersecting) return;
-      const id = e.target.dataset.sec;
-      links.forEach((a) => (a.dataset.to === id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
-    }), { rootMargin: "-45% 0px -50% 0px" });
-    root.querySelectorAll("[data-sec]").forEach((x) => so.observe(x));
-    W.obs.push(so);
-    const score = $("cp-score"), mn = $("cp-mini");
-    if (score && mn && !mn.hidden) {
-      const ho = new IntersectionObserver(([e]) => {
-        const on = !e.isIntersecting && e.boundingClientRect.top < 0;
-        mn.classList.toggle("on", on);
-        document.body.classList.toggle("mini-on", on);
-      }, { rootMargin: "-64px 0px 0px 0px" });
-      ho.observe(score);
-      W.obs.push(ho);
     }
   }
   function themeToggle() {
@@ -1156,7 +1371,7 @@
       document.documentElement.dataset.theme = next;
       try { localStorage.setItem("cp-theme", next); } catch (_) { /* private window: this visit only */ }
       label();
-      if (Router.current === "cp") drawChart();
+      if (Router.current === "cp") drawChart();    // on another tab the chart is redrawn when Overview is shown again
     });
   }
 
@@ -1164,7 +1379,9 @@
     title: "Claude Portfolio",
     async render(el, params) {
       themeToggle();
-      el.replaceChildren(loading());
+      T.want = null;
+      markNav(tabOf(params));
+      el.replaceChildren(...[band(), loading(tabOf(params))].filter(Boolean));
       const keys = ["s", "hd", "up", "cv"];
       const got = await Promise.allSettled(["/api/cp/summary", "/api/cp/holdings", "/api/cp/updates", "/api/cp/curve"].map((p) => api(p)));
       if (!el.isConnected || Router.current !== "cp") return;
@@ -1174,16 +1391,30 @@
         if (r.status !== "fulfilled") D.err[keys[i]] = r.reason;
       });
       const n = D.cv ? (D.cv.points || []).length : 0;
-      const who = author();
-      document.title = who.name ? `Claude Portfolio · by ${who.name}` : "Claude Portfolio";
       statusPill(D.s);
       mini(D.s);
-      const root = h("div", { class: "cp" }, hero(D), chipNav(), record(D), holdings(D), decisions(D), method(D), verify(D), rules(D, n),
-        about(D), legal(D), h("p", { class: "sr-only", id: "cp-announce", "aria-live": "polite" }));
-      el.replaceChildren(root);
-      drawChart();
-      wire(root);
-      revealSection(params);
+      const panel = (id, ...kids) => h("div", { class: "cp-panel", id: `cp-tab-${id}`, "data-panel": id, hidden: true }, ...kids);
+      const P = {
+        overview: panel("overview", hero(D), record(D), nextTab("holdings")),
+        holdings: panel("holdings", holdings(D), nextTab("decisions")),
+        decisions: panel("decisions", decisions(D), nextTab("method")),
+        method: panel("method", method(D), rules(D, n), verify(D), about(D), legal(D)),
+      };
+      el.replaceChildren(...[band(), h("div", { class: "cp" }, Object.values(P),
+        h("p", { class: "sr-only", id: "cp-announce", "aria-live": "polite" }))].filter(Boolean));
+      T.panels = P;
+      T.cur = null;
+      wire();
+      const q = T.want || params;                  // the address changed while the data loaded: that tab
+      T.want = null;
+      showTab(tabOf(q), { sec: q.get("sec") || q.get("open"), focus: false });
+    },
+    /* the router calls this when only the part after #/cp? changes (a typed address, a key): switch, do not reload */
+    update(params) {
+      if (!T.panels) { T.want = params; return true; }   // still loading: render() opens that tab when it is done
+      const st = history.state;                    // Back or Forward to an entry that kept its scroll position
+      showTab(tabOf(params), { sec: params.get("sec") || params.get("open"), y: st && Number.isFinite(st.cpY) ? st.cpY : null });
+      return true;
     },
     leave() {
       W.obs.forEach((o) => o.disconnect());
@@ -1191,9 +1422,15 @@
       W.obs = [];
       W.off = [];
       document.body.classList.remove("mini-on");
+      delete document.body.dataset.cpTab;
       if (CH && CH.chart) dropChart(CH.chart);
       CH = null;
       DEC = null;
+      T.panels = null;
+      T.cur = null;
+      T.want = null;
+      T.scoreOut = false;
+      markNav(null);
     },
   };
 })();

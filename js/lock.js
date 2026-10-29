@@ -199,7 +199,7 @@
   const route = Router.render.bind(Router);
   Router.render = function () { setDisclaimer(Router.parse().page); return route(); };
 
-  /* the logo goes to the public front page */
+  /* the logo goes to the public front page, the Overview tab (named as index.html names it) */
   const logo = document.querySelector("a.logo");
-  if (logo) { logo.setAttribute("href", "#/cp"); logo.setAttribute("aria-label", "SV Terminal, Claude Portfolio"); }
+  if (logo) { logo.setAttribute("href", "#/cp"); logo.setAttribute("aria-label", "Claude Portfolio, Overview"); }
 })();
