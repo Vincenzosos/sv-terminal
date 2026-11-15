@@ -1,14 +1,28 @@
 /* Claude Portfolio (#/cp): the one-page dashboard's design layer (15 Nov 2026; it replaces the warm skin of 27 Oct, which
    looked like a copy of Claude). A dark trading screen: a near-black page, graphite panels with a hairline border and
    16px corners side by side in a 12-column grid, one sans (Inter, tabular figures everywhere), monospace only for
-   fingerprints. Green and red only for signed numbers, gains and losses, and status dots; links in a cool blue;
-   selected controls are a lighter graphite pill with white text. Dark only: there is no light theme.
+   fingerprints. Green and red only for signed numbers, gains and losses, "Traded" and status dots.
+   One accent, sparingly (15 Nov 2026, the owner: "a few sprinkles of another colour"): the SV azure of the favicon
+   (icon.svg), never on a signed number. It marks the brand mark, a faint glow at the top of the page, Claude's line on the
+   chart (its area, its fill markers and every swatch that names it), the selected segment, the allocation bars, the change
+   chips and the quote's rule, links, focus rings, the main buttons and the steps of How it works; everything else stays
+   black and graphite. Not orange (Claude's own colour), not violet (rejected), not teal (too close to the gain green).
+   Dark only: there is no light theme.
    Loaded last (after app.css and, on the public site, static.css), so it wins over the legacy terminal styles.
    Tokens only: every colour is a --cp-* token of the block below, written as rgb() (no hex in page CSS, tests.test_shell).
-   Contrast (WCAG, on the panel colour): text 16.3:1, secondary grey 6.9:1, links 7.6:1, green 9.1:1, red 5.5:1 (5.0:1 on
-   the raised grey); the muted grey (3.6:1) is used only for marks, separators and icons, never for text a reader needs.
-   Layout: 12 columns from 1200px (tighter below 1440px), two from 768px, one below (16px gutters). All motion is off
-   under prefers-reduced-motion. Class prefix cp-. */
+   Contrast (WCAG, on the panel colour): text 16.3:1, secondary grey 6.9:1, green 9.1:1, red 5.5:1 (5.0:1 on the raised
+   grey); the muted grey (3.6:1) is used only for marks, separators and icons, never for text a reader needs.
+   Azure: links, focus rings and azure text 8.3:1 on the panel (8.9:1 on the page, 7.5:1 on the raised grey of the
+   quote); azure text on its tint 6.5:1 (chips, step numbers) and 7.2:1 (the selected segment, on the page colour); the
+   azure outline 3.3:1 on the panel, 3.4:1 on the page, 3.2:1 on the raised grey (3.9:1 for the selected segment's ring);
+   the chart's line and the allocation bars 8.3:1 on the panel, 7.5:1 on their grey track and 5.9:1 against the cash part;
+   the brand mark 8.8:1 under the glow; the cash-limit tick keeps a panel-coloured ring (8.3:1 against the azure bar,
+   the tick itself 11.5:1 on the cash part). The top bar's two quiet links are the secondary grey (7.4:1 on the page).
+   A link in running text is underlined as well (the azure outline colour, 3.3:1), as the azure against the grey text
+   around it is only 1.2:1: colour is never a link's only cue.
+   Layout: 12 columns from 1200px (tighter below 1440px), two from 768px, one below (16px gutters). How it works and
+   Verify are dialogs (the top bar's and the footer's links), not panels. All motion is off under prefers-reduced-motion.
+   Class prefix cp-. */
 
 /* ================================================================ tokens */
 :root {
@@ -24,11 +38,15 @@
   --cp-text-3: rgb(107, 112, 118);
   --cp-up: rgb(47, 209, 122);
   --cp-down: rgb(255, 77, 79);
-  --cp-link: rgb(122, 167, 255);
-  --cp-series-claude: rgb(242, 243, 245);
+  --cp-accent: rgb(108, 180, 255);                  /* the SV azure (icon.svg) */
+  --cp-accent-soft: rgba(108, 180, 255, 0.14);      /* its tint: chips, the selected segment, step numbers, hovers */
+  --cp-accent-line: rgba(108, 180, 255, 0.55);      /* its outline: 3:1 or more on the panel and the page */
+  --cp-glow: radial-gradient(ellipse 80% 520px at 50% -90px, rgba(108, 180, 255, 0.09), rgba(108, 180, 255, 0) 75%);
+  --cp-link: var(--cp-accent);
+  --cp-series-claude: var(--cp-accent);
   --cp-series-etf: rgb(154, 160, 166);
-  --cp-area-top: rgba(242, 243, 245, 0.13);
-  --cp-area-bot: rgba(242, 243, 245, 0);
+  --cp-area-top: rgba(108, 180, 255, 0.24);
+  --cp-area-bot: rgba(108, 180, 255, 0);
   --cp-grid: rgba(255, 255, 255, 0.05);
   --cp-scrim: rgba(4, 5, 7, 0.74);
   --cp-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
@@ -48,20 +66,28 @@
 }
 
 /* ================================================================ shell */
-html:has(body[data-page="cp"]) { background: var(--cp-bg); }
+/* the scrollbar's room is kept while a dialog stops the page from scrolling, so nothing shifts sideways */
+html:has(body[data-page="cp"]) { background: var(--cp-bg); scrollbar-gutter: stable; }
+/* the faint azure glow at the top: fixed to the window, and drawn again in the top bar (which is opaque, as it stays on
+   screen from 1200px), so the two meet without a seam; it reads as depth, the panels stay graphite */
 body[data-page="cp"] {
   margin: 0; min-height: 100vh; padding-bottom: 0; overflow-x: hidden;
-  background: var(--cp-bg); color: var(--cp-text);
+  background: var(--cp-glow) fixed, var(--cp-bg); color: var(--cp-text);
   font: 400 14px / 1.5 var(--cp-font); font-feature-settings: "tnum" 1; font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
-body[data-page="cp"] ::selection { background: rgba(122, 167, 255, 0.28); color: var(--cp-text); }
+body[data-page="cp"] ::selection { background: rgba(108, 180, 255, 0.3); color: var(--cp-text); }
 /* the legacy shell (search, alerts, clock, quote stream, status bar): not part of this site */
 #search, #search-toggle, #bell, #live, #clock, #tabs, #statusbar, #pub-lock { display: none !important; }
-body[data-page="cp"] :focus-visible { outline: 2px solid var(--cp-link); outline-offset: 2px; }
+body[data-page="cp"] :focus-visible { outline: 2px solid var(--cp-accent); outline-offset: 2px; }
 body[data-page="cp"] [tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
-body[data-page="cp"] a { color: var(--cp-link); text-decoration: none; }
-body[data-page="cp"] a:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* a link in running text is underlined in the soft azure, so its colour is not its only cue (the azure against the grey
+   text around it is 1.2:1; WCAG 1.4.1); buttons, the top bar's two quiet links and the skip link opt out where they are
+   styled */
+body[data-page="cp"] a {
+  color: var(--cp-link); text-decoration: underline; text-decoration-color: var(--cp-accent-line); text-underline-offset: 3px;
+}
+body[data-page="cp"] a:hover { text-decoration-color: currentColor; }
 body[data-page="cp"] .up { color: var(--cp-up); }
 body[data-page="cp"] .down { color: var(--cp-down); }
 body[data-page="cp"] .nw { white-space: nowrap; }
@@ -70,26 +96,39 @@ body[data-page="cp"] .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 body[data-page="cp"] .skip-link {
-  background: var(--cp-panel); color: var(--cp-text); border: 2px solid var(--cp-link); border-radius: var(--cp-r3);
-  font: 600 13px / 1.2 var(--cp-font); z-index: 90;
+  background: var(--cp-panel); color: var(--cp-text); border: 2px solid var(--cp-accent); border-radius: var(--cp-r3);
+  font: 600 13px / 1.2 var(--cp-font); text-decoration: none; z-index: 90;
 }
 body[data-page="cp"] .page { max-width: none; margin: 0; padding: 0; }
 body[data-page="cp"] .tip { background: var(--cp-raised); color: var(--cp-text); border-color: var(--cp-line-2); font-family: var(--cp-font); }
 
-/* ---------------------------------------------------------------- top bar: title and byline, the pills, the status */
+/* ---------------------------------------------------------------- top bar: the mark, title and byline, the two links to
+   How it works and Verify (dialogs), the pills, the status */
 body[data-page="cp"] header.top {
-  position: relative; z-index: 50; height: auto; background: var(--cp-bg); border-bottom: 1px solid var(--cp-line); box-shadow: none;
+  position: relative; z-index: 50; height: auto; background: var(--cp-glow) fixed, var(--cp-bg); border-bottom: 1px solid var(--cp-line);
+  box-shadow: none;
 }
 body[data-page="cp"] .top-inner {
   display: flex; align-items: center; flex-wrap: wrap; gap: 10px 24px; height: auto; min-height: var(--cp-top);
   grid-template: none; background: transparent; width: 100%; max-width: var(--cp-max); margin: 0 auto; padding: 10px var(--cp-gutter);
 }
-.cp-brand { flex: 1 1 280px; min-width: 0; }
-.cp-h1 { margin: 0; font: 700 19px / 1.2 var(--cp-font); letter-spacing: -0.01em; color: var(--cp-text); }
-.cp-tagline { margin: 2px 0 0; font: 400 13px / 1.4 var(--cp-font); color: var(--cp-text-2); }
-.cp-tagline a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(122, 167, 255, 0.45); }
+.cp-brand { display: flex; align-items: center; gap: 12px; flex: 1 1 280px; min-width: 0; }
+.cp-mark { flex: none; width: 30px; height: 30px; color: var(--cp-accent); }
+/* the title with the two links beside it, the tagline under both (phones: the links under the tagline). index.html puts the
+   links before the tagline, so the keyboard reaches them in the order of the wider layouts (768px up) */
+.cp-brand-t {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "title links" "tag tag"; align-items: baseline;
+  column-gap: 14px; min-width: 0;
+}
+.cp-h1 { grid-area: title; margin: 0; font: 700 19px / 1.2 var(--cp-font); letter-spacing: -0.01em; color: var(--cp-text); }
+.cp-tagline { grid-area: tag; margin: 2px 0 0; font: 400 13px / 1.4 var(--cp-font); color: var(--cp-text-2); }
 .cp-by { white-space: nowrap; }
 .cp-by:empty { display: none; }
+.cp-links { grid-area: links; display: flex; flex-wrap: wrap; gap: 2px 16px; padding-left: 14px; border-left: 1px solid var(--cp-line-2); }
+body[data-page="cp"] .cp-links a {
+  font: 500 13px / 1.4 var(--cp-font); color: var(--cp-text-2); text-decoration: none; white-space: nowrap; transition: color var(--cp-dur);
+}
+body[data-page="cp"] .cp-links a:hover { color: var(--cp-text); text-decoration: underline; text-decoration-color: var(--cp-accent); }
 body[data-page="cp"] .top-right {
   display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; padding: 0; flex: 0 1 auto;
 }
@@ -122,6 +161,15 @@ body[data-page="cp"] .top-right {
   body[data-page="cp"] .top-inner { column-gap: 16px; }
   body[data-page="cp"] .top-right, .cp-pills { gap: 6px; }
   .cp-pill, .cp-status { padding: 0 10px; gap: 6px; font-size: 12.5px; }
+}
+/* the narrowest desktops: a smaller mark and the status pill's short form (as on phones; its full words stay in its label
+   and tooltip), so the tagline keeps to one line */
+@media (min-width: 1200px) and (max-width: 1279px) {
+  body[data-page="cp"] .top-inner { column-gap: 12px; }
+  .cp-brand { gap: 10px; }
+  .cp-mark { width: 26px; height: 26px; }
+  .cp-pill, .cp-status { padding: 0 9px; }
+  .cp-status .lg { display: none; }
 }
 @media (max-width: 1199px) {
   body[data-page="cp"] .top-right { flex: 1 1 100%; justify-content: flex-start; margin-left: 0; }
@@ -180,19 +228,27 @@ body[data-page="cp"] details[open] > summary::before { content: ""; transform: r
   font: 600 13px / 1 var(--cp-font); color: var(--cp-text); white-space: nowrap; text-decoration: none;
   transition: background-color var(--cp-dur), border-color var(--cp-dur);
 }
-body[data-page="cp"] a.cp-btn { color: var(--cp-text); }
-.cp-btn:hover { background: var(--cp-pill); text-decoration: none !important; }
+body[data-page="cp"] a.cp-btn { color: var(--cp-text); text-decoration: none; }
+/* every button turns azure under the pointer; the main ones (Show all, Recompute here, Rules) wear the azure outline */
+.cp-btn:hover:not(:disabled, [aria-disabled="true"]) {
+  border-color: var(--cp-accent-line); background: var(--cp-accent-soft); text-decoration: none !important;
+}
+.cp-btn.pri { border-color: var(--cp-accent-line); }
 .cp-btn:disabled { opacity: 0.55; cursor: default; }
+/* a button whose work is done (Recompute here, then Recomputed): aria-disabled, so it keeps the focus; dimmed by its
+   colours, not by opacity, so its focus ring keeps its full contrast */
+.cp-btn[aria-disabled="true"] { border-color: var(--cp-line-2); background: transparent; color: var(--cp-text-2); cursor: default; }
 .cp-btn.sm { height: 26px; padding: 0 9px; font: 500 12px / 1 var(--cp-font); }
 .cp-link { padding: 0; border: 0; background: none; font: inherit; color: var(--cp-link); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-/* the segmented control: a dark track, the selected part a lighter graphite pill with white text */
+/* the segmented control: a dark track, the selected part an azure-tinted pill with an azure outline and azure text */
 .cp-seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--cp-line); border-radius: 999px; background: var(--cp-bg); }
 .cp-seg button {
   min-width: 36px; height: 26px; padding: 0 11px; border: 0; border-radius: 999px; background: transparent;
-  font: 600 12px / 1 var(--cp-font); color: var(--cp-text-2); transition: background-color var(--cp-dur), color var(--cp-dur);
+  font: 600 12px / 1 var(--cp-font); color: var(--cp-text-2);
+  transition: background-color var(--cp-dur), color var(--cp-dur), box-shadow var(--cp-dur);
 }
 .cp-seg button:hover { color: var(--cp-text); }
-.cp-seg button[aria-pressed="true"] { background: var(--cp-pill); color: var(--cp-text); }
+.cp-seg button[aria-pressed="true"] { background: var(--cp-accent-soft); box-shadow: inset 0 0 0 1px var(--cp-accent-line); color: var(--cp-accent); }
 /* fingerprints: short on screen, the full one in the tooltip and on the clipboard */
 .cp-fp { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
 .cp-hash { font: 500 12px / 1 var(--cp-mono); color: var(--cp-text-2); letter-spacing: 0; }
@@ -209,13 +265,13 @@ body[data-page="cp"] a.cp-btn { color: var(--cp-text); }
 .cp-sw { display: inline-block; width: 14px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 2px solid var(--cp-series-claude); }
 .cp-sw.e { border-top: 2px dashed var(--cp-series-etf); }
 
-/* ================================================================ the dashboard grid */
+/* ================================================================ the dashboard grid: two rows of three, the chart and the
+   decisions in the middle, Allocation and Recent fills stacked in the right column of the second row */
 .cp-dash {
   display: grid; gap: var(--cp-gap); grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-areas:
     "port port port perf perf perf perf perf perf hold hold hold"
-    "risk risk risk dec dec dec dec dec dec side side side"
-    "how how how how how how how how ver ver ver ver";
+    "risk risk risk dec dec dec dec dec dec side side side";
   max-width: var(--cp-max); margin: 0 auto; padding: var(--cp-gap) var(--cp-gutter) 28px;
 }
 .p-port { grid-area: port; }
@@ -224,8 +280,6 @@ body[data-page="cp"] a.cp-btn { color: var(--cp-text); }
 .p-risk { grid-area: risk; }
 .p-dec { grid-area: dec; }
 .cp-side { grid-area: side; display: flex; flex-direction: column; gap: var(--cp-gap); min-width: 0; }
-.p-how { grid-area: how; }
-.p-ver { grid-area: ver; }
 
 /* ---------------------------------------------------------------- the panel */
 .cp-panel {
@@ -289,7 +343,7 @@ body[data-page="cp"] a.cp-btn { color: var(--cp-text); }
 .cp-pf { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 10px; font-size: 12px; color: var(--cp-text-2); }
 .cp-keys { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .cp-keys .k-dec { color: var(--cp-text-2); }
-.cp-keys .k-fill { color: var(--cp-text); font-size: 10px; }
+.cp-keys .k-fill { color: var(--cp-series-claude); font-size: 10px; }   /* the fill markers sit on Claude's line: its azure */
 
 /* ---------------------------------------------------------------- Holdings */
 .cp-hl-h, .cp-hrow, .cp-hl-cash { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px 52px 10px; align-items: center; gap: 8px; }
@@ -352,7 +406,14 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-how-b pre code { font-size: 12px; color: var(--cp-text); }
 
 /* ---------------------------------------------------------------- Decisions (a broker's order list) */
-.cp-quote { margin-bottom: 12px; padding: 12px 14px; border: 1px solid var(--cp-line); border-radius: var(--cp-r2); background: var(--cp-raised); }
+.cp-quote {
+  position: relative; margin-bottom: 12px; padding: 12px 14px 12px 17px; border: 1px solid var(--cp-line); border-radius: var(--cp-r2);
+  background: var(--cp-raised);
+}
+/* Claude's words: an azure rule down the quote's left edge */
+.cp-quote::before {
+  content: ""; position: absolute; left: -1px; top: 12px; bottom: 12px; width: 3px; border-radius: 0 3px 3px 0; background: var(--cp-accent);
+}
 .cp-quote blockquote {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
   font-size: 14px; line-height: 1.55; color: var(--cp-text);
@@ -382,11 +443,12 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .c-ven { color: var(--cp-text-2); font-size: 12px; line-height: 1.3; }
 .cp-dt .sm { display: none; }
 .cp-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+/* the changes a decision made (+HUM, MRK trim): azure-tinted labels; "N more" stays a grey outline */
 .cp-chip {
-  display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border: 1px solid var(--cp-line-2); border-radius: 999px;
-  background: var(--cp-raised); font: 600 12px / 1 var(--cp-font); color: var(--cp-text); white-space: nowrap;
+  display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border: 1px solid transparent; border-radius: 999px;
+  background: var(--cp-accent-soft); font: 600 12px / 1 var(--cp-font); color: var(--cp-accent); white-space: nowrap;
 }
-.cp-chip.more { color: var(--cp-text-2); font-weight: 500; background: transparent; }
+.cp-chip.more { border-color: var(--cp-line-2); color: var(--cp-text-2); font-weight: 500; background: transparent; }
 .cp-drow.fp-ok .cp-hash::after { content: " ✓"; color: var(--cp-text); }
 .cp-drow.fp-bad .cp-hash::after { content: " ✗"; color: var(--cp-down); }
 .cp-ddet > td { padding: 0 0 16px !important; border-bottom: 1px solid var(--cp-line); text-align: left !important; cursor: auto; }
@@ -410,16 +472,19 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-inv b { font-weight: 600; color: var(--cp-text); }
 .cp-lim { font-size: 12px; }
 .cp-inv-bar { position: relative; display: flex; gap: 2px; height: 8px; margin: 7px 0 4px; }
-.cp-inv-bar .inv { border-radius: 4px 0 0 4px; background: var(--cp-text); }
+.cp-inv-bar .inv { border-radius: 4px 0 0 4px; background: var(--cp-accent); }
 .cp-inv-bar .cash { border-radius: 0 4px 4px 0; background: var(--cp-pill); }
-.cp-inv-bar .tick { position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: var(--cp-text-2); }
+/* the cash limit: a light tick with a ring of the panel's colour, visible on the azure part and on the grey one */
+.cp-inv-bar .tick {
+  position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: var(--cp-text); box-shadow: 0 0 0 2px var(--cp-panel);
+}
 .cp-secs { display: grid; gap: 5px; margin-top: 10px; }
 .cp-secs li { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 13px; line-height: 1.35; }
 .cp-secs .n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--cp-text); }
 .cp-secs .n small { font-size: 12px; color: var(--cp-text-2); }
 .cp-secs .w { text-align: right; font-weight: 600; }
 .cp-track { height: 6px; border-radius: 3px; background: var(--cp-raised); overflow: hidden; }
-.cp-track i { display: block; height: 100%; border-radius: 3px; background: var(--cp-text-2); }
+.cp-track i { display: block; height: 100%; border-radius: 3px; background: var(--cp-accent); }
 
 /* ---------------------------------------------------------------- Recent fills (a broker's time and sales) */
 .p-fills { flex: 1 1 auto; }
@@ -434,35 +499,8 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-ft tbody:first-of-type tr.g th { padding-top: 7px; }
 .p-fills .cp-hint { margin-top: 10px; }
 
-/* ---------------------------------------------------------------- How it works */
-.cp-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; counter-reset: none; }
-.cp-steps li {
-  position: relative; display: flex; flex-direction: column; gap: 4px; padding: 12px 12px 13px; border: 1px solid var(--cp-line);
-  border-radius: var(--cp-r2); background: var(--cp-raised); min-width: 0;
-}
-.cp-steps li:not(:last-child)::after {
-  content: ""; position: absolute; top: 22px; right: -9px; z-index: 1; width: 8px; height: 8px; border: solid var(--cp-text-3);
-  border-width: 1.5px 1.5px 0 0; transform: rotate(45deg);
-}
-.cp-steps .n {
-  display: inline-grid; place-items: center; width: 22px; height: 22px; margin-bottom: 4px; border-radius: 50%;
-  background: var(--cp-pill); font: 700 11px / 1 var(--cp-font); color: var(--cp-text);
-}
-.cp-steps b { font-size: 13px; line-height: 1.3; font-weight: 600; color: var(--cp-text); }
-.cp-steps .t { font-size: 12px; line-height: 1.45; color: var(--cp-text-2); }
-.cp-steps .m { margin-top: auto; padding-top: 4px; font-size: 11px; line-height: 1.4; color: var(--cp-text-2); }
-
-/* ---------------------------------------------------------------- Verify */
-.cp-vlist { display: grid; gap: 0; }
-.cp-vrow { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--cp-line); font-size: 13px; }
-.cp-vrow:first-child { padding-top: 0; }
-.cp-vrow dt { font-size: 12px; font-weight: 500; color: var(--cp-text-2); }
-.cp-vrow dd { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; min-width: 0; }
-.cp-vstat { font-size: 12px; color: var(--cp-text-2); }
-.cp-dl { display: flex; flex-wrap: wrap; gap: 6px; }
-.p-ver .cp-how { margin-top: 10px; padding-top: 0; border-top: 0; }
-
-/* ---------------------------------------------------------------- dialogs (Rules v3, Legal) */
+/* ---------------------------------------------------------------- dialogs: How it works, Verify, Rules v3, Legal.
+   One at a time; about 680px wide, nearly the whole screen on a phone, the body scrolling inside */
 .cp-dialog {
   width: min(680px, calc(100vw - 32px)); max-height: min(84vh, 760px); padding: 0; margin: auto; overflow: hidden;
   border: 1px solid var(--cp-line-2); border-radius: 18px; background: var(--cp-panel); color: var(--cp-text); box-shadow: var(--cp-shadow);
@@ -476,9 +514,45 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-dlg-h h2 { margin: 0; font: 600 17px / 1.3 var(--cp-font); }
 .cp-x { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: var(--cp-raised); color: var(--cp-text); }
 .cp-x:hover { background: var(--cp-pill); }
-.cp-dlg-b { display: grid; gap: 12px; overflow-y: auto; padding: 16px 18px 20px; color: var(--cp-text); }
-.cp-dlg-b a { text-decoration: underline; text-underline-offset: 3px; }
+.cp-dlg-b {
+  display: grid; gap: 12px; overflow-y: auto; overscroll-behavior: contain; padding: 16px 18px 20px; color: var(--cp-text);
+  scrollbar-width: thin; scrollbar-color: var(--cp-pill) transparent;
+}
+.cp-dlg-b a:not(.cp-btn) { text-decoration: underline; text-underline-offset: 3px; }
 .cp-dlg-lead { color: var(--cp-text-2); }
+.cp-dlg-act { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+
+/* How it works: the five steps down a thin line, each number an azure dot */
+.cp-steps { display: grid; gap: 0; margin: 2px 0 2px; }
+.cp-steps li { position: relative; display: grid; grid-template-columns: 26px minmax(0, 1fr); column-gap: 14px; padding-bottom: 16px; }
+.cp-steps li:last-child { padding-bottom: 0; }
+.cp-steps li:not(:last-child)::before {
+  content: ""; position: absolute; left: 12.5px; top: 32px; bottom: 6px; width: 1px; background: var(--cp-line-2);
+}
+.cp-steps .n {
+  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--cp-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--cp-accent-line); font: 700 12px / 1 var(--cp-font); color: var(--cp-accent);
+}
+.cp-steps .s { display: grid; gap: 2px; min-width: 0; padding-top: 3px; }
+.cp-steps b { font-size: 14px; line-height: 1.35; font-weight: 600; color: var(--cp-text); }
+.cp-steps .t { font-size: 13.5px; line-height: 1.5; color: var(--cp-text); }
+.cp-steps .m { font-size: 12px; line-height: 1.45; color: var(--cp-text-2); }
+.cp-dialog .cp-hint { margin-top: 0; padding-top: 12px; border-top: 1px solid var(--cp-line); font-size: 13px; }
+
+/* Verify: the record's rows, then how to check a fingerprint */
+.cp-vlist { display: grid; gap: 0; }
+.cp-vrow {
+  display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; align-items: center; padding: 9px 0;
+  border-bottom: 1px solid var(--cp-line); font-size: 13px;
+}
+.cp-vrow:first-child { padding-top: 0; }
+.cp-vrow dt { font-size: 12.5px; font-weight: 500; color: var(--cp-text-2); }
+.cp-vrow dd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; min-width: 0; }
+.cp-vstat { font-size: 12.5px; color: var(--cp-text-2); }
+.cp-dl { display: flex; flex-wrap: wrap; gap: 6px; }
+.cp-dialog .cp-how { margin-top: 0; padding-top: 2px; border-top: 0; }
+
+/* Rules v3: the numbered rules, then their fingerprint */
 .cp-rules { display: grid; gap: 0; counter-reset: rule; list-style: none; }
 .cp-rules li { position: relative; padding: 8px 0 8px 32px; border-bottom: 1px solid var(--cp-line); counter-increment: rule; }
 .cp-rules li::before {
@@ -486,6 +560,7 @@ button.cp-hrow:hover { background: var(--cp-raised); }
   border-radius: 50%; background: var(--cp-raised); font: 700 11px / 1 var(--cp-font); color: var(--cp-text-2);
 }
 .cp-dlg-fp { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--cp-text-2); font-size: 13px; }
+/* the page under an open dialog does not scroll */
 body:has(.cp-dialog[open]) { overflow: hidden; }
 
 /* ---------------------------------------------------------------- loading */
@@ -503,30 +578,35 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
 /* ================================================================ 1200–1439px: the same grid, tighter */
 @media (min-width: 1200px) and (max-width: 1439px) {
   .cp-big { font-size: 33px; }
-  .cp-steps .t { font-size: 12px; }
   .c-ven { max-width: 92px; }
 }
 
 /* ================================================================ 768–1199px: two columns, the chart on top
-   panels in pairs of about the same height: Risk with Recent fills (whose list takes the height Risk leaves),
-   Allocation with Verify */
+   panels in pairs of about the same height: Portfolio with Holdings, then Risk with the right column of the desktop
+   (Allocation over Recent fills, whose list takes the height Risk leaves) */
 @media (max-width: 1199px) {
   .cp-dash {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas: "perf perf" "port hold" "dec dec" "risk fills" "alloc ver" "how how";
+    grid-template-areas: "perf perf" "port hold" "dec dec" "risk side";
   }
-  .cp-side { display: contents; }
-  .p-alloc { grid-area: alloc; }
-  .p-fills { grid-area: fills; }
   .p-hold .cp-scroll { min-height: 280px; }
 }
 
 /* ================================================================ phones: one column, the order of the brief */
 @media (max-width: 767px) {
-  .cp-dash { grid-template-columns: minmax(0, 1fr); grid-template-areas: "port" "perf" "hold" "dec" "risk" "alloc" "fills" "how" "ver"; }
+  .cp-dash { grid-template-columns: minmax(0, 1fr); grid-template-areas: "port" "perf" "hold" "dec" "risk" "alloc" "fills"; }
+  .cp-side { display: contents; }
+  .p-alloc { grid-area: alloc; }
+  .p-fills { grid-area: fills; }
   .cp-h1 { font-size: 18px; }
   .cp-by { display: block; }
   .cp-by .cp-sep { display: none; }
+  /* the mark beside the title; the links to How it works and Verify on their own line under the tagline */
+  .cp-brand { align-items: flex-start; gap: 10px; }
+  .cp-mark { width: 26px; height: 26px; margin-top: -2px; }
+  .cp-brand-t { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "tag" "links"; }
+  .cp-links { margin-top: 6px; padding-left: 0; border-left: 0; gap: 2px 18px; }
+  body[data-page="cp"] .cp-links a { padding-block: 6px; margin-block: -6px; }   /* a 30px tap area; the line keeps its height */
   body[data-page="cp"] .top-inner { row-gap: 8px; padding-block: 12px; }
   body[data-page="cp"] .top-right, .cp-pills { gap: 6px; }
   .cp-pills { display: contents; }            /* the pills and the status wrap together: two rows on a phone */
@@ -561,14 +641,13 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
   .cp-ddet[hidden] { display: none; }
   .cp-ddet > td { display: block; padding: 0 0 14px; }
   .cp-dd { padding-left: 0; }
-  .cp-steps { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .cp-steps li { display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 10px; row-gap: 2px; padding: 10px 12px; }
-  .cp-steps li > :not(.n) { grid-column: 2; }
-  .cp-steps .n { grid-row: 1 / span 3; margin: 0; }
-  .cp-steps li:not(:last-child)::after { top: auto; bottom: -9px; right: auto; left: 22px; transform: rotate(135deg); }
-  .cp-vrow { grid-template-columns: minmax(0, 1fr); gap: 4px; }
-  .cp-dialog { width: calc(100vw - 24px); max-height: 88vh; }
-  .cp-dlg-in { max-height: 88vh; }
+  .cp-vrow { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  /* a dialog takes nearly the whole screen, its body scrolling inside (dvh: the visible height, with the browser's bars) */
+  .cp-dialog { width: calc(100vw - 16px); max-width: none; max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); border-radius: 16px; }
+  .cp-dlg-in { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
+  .cp-dlg-h { padding: 12px 14px 12px 16px; }
+  .cp-dlg-b { padding: 14px 16px 18px; }
+  .cp-steps li { column-gap: 12px; }
 }
 
 /* ================================================================ motion */

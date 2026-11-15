@@ -2,12 +2,14 @@
    sets twice a week; an Interactive Brokers demo account executes them; every decision is fingerprinted before it trades.
    15 Nov 2026: ONE page, a dashboard of panels in view at a glance (the owner's request: "one single page, a different
    colour, nobody clicks through pages", after the idea of Trade Republic's web Trading screen). Styles: css/cp.css.
-     top bar (index.html's header)   title, byline, the key numbers as pills, the status pill
+     top bar (index.html's header)   the mark, title, byline, links to How it works and Verify, the key numbers as pills,
+                                     the status pill
      row 1                           Portfolio · Performance (the chart) · Holdings
      row 2                           Risk vs S&P 500 ETF · Decisions · Allocation and Recent fills
-     row 3                           How it works · Verify
-   Rules v3 and Legal open as dialogs (#/cp?open=rules, #/cp?open=legal). #/cp is the only address: old links with ?tab=,
-   ?sec= or ?open= open the page at its top (core.js Router drops them on arrival; render() cleans what is left).
+   How it works, Verify, Rules v3 and Legal open as dialogs, one at a time (#/cp?open=how, verify, rules, legal: the top
+   bar's two links, the footer's four, the disclaimer's Legal; the owner, 15 Nov 2026: How it works and Verify "must exist,
+   but not be visible directly"). #/cp is the only address: old links with ?tab=, ?sec= or ?open= open the page at its top
+   (core.js Router drops them on arrival; render() cleans what is left).
    Every number comes from /api/cp/summary, /holdings, /updates, /curve (or plain arithmetic on them); a missing datum
    shows a designed empty state, never a guess. Nodes are built with h() only (no innerHTML with API text). */
 (function () {
@@ -28,10 +30,13 @@
     "recommendation or solicitation to buy or sell any security. Past or simulated results do not predict future results. " +
     "Not affiliated with Anthropic; Claude is used as a tool. Prices: Lang & Schwarz indications, for personal use. " +
     "Member list: Wikipedia (CC BY-SA 4.0).";
-  /* the two dialogs a link can open (publish.py LEGAL_HREF is the first) */
+  /* the four dialogs a link can open. The same hrefs are written in index.html (the top bar's How it works and Verify, the
+     local footer) and in publish.py (LEGAL_HREF, RULES_HREF, HOW_HREF, VERIFY_HREF: the public band and footer) */
   const LEGAL_HREF = "#/cp?open=legal";
   const RULES_HREF = "#/cp?open=rules";
-  const DIALOGS = new Set(["legal", "rules"]);
+  const HOW_HREF = "#/cp?open=how";
+  const VERIFY_HREF = "#/cp?open=verify";
+  const DIALOGS = new Set(["legal", "rules", "how", "verify"]);
   const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   const NARROW_CHART = 520;                      // below this plot width: smaller markers
   const DEC_SHOWN = 7;                           // decisions listed before "Show all" (all of them up to two more)
@@ -118,8 +123,10 @@
   const xIc = () => ic(16, h("path", { d: "M4 4l8 8M12 4l-8 8", ...stroke }));
   const newTab = () => h("span", { class: "sr-only" }, " (opens in a new tab)");
   const extLink = (href, text, cls) => h("a", { href, target: "_blank", rel: "noopener", class: cls || null }, text, newTab());
+  /* a polite message for screen readers. While a dialog is open the page around it is inert and its live region silent:
+     the open dialog's own region (makeDialog) speaks instead */
   const announce = (msg) => {
-    const a = $("cp-announce");
+    const a = document.querySelector(".cp-dialog[open] .cp-dlg-live") || $("cp-announce");
     if (a) { a.textContent = ""; setTimeout(() => { a.textContent = msg; }, 30); }
   };
   async function copyText(text) {
@@ -822,7 +829,7 @@
         h("th", { scope: "col", class: ["c-date", "c-res", "c-chg", "c-ord", "c-ven", "c-fp"][i] }, x)))),
       body);
     if (fold) {
-      DEC.all = h("button", { class: "cp-btn cp-all", type: "button" }, `Show all ${ups.length} decisions`);
+      DEC.all = h("button", { class: "cp-btn pri cp-all", type: "button" }, `Show all ${ups.length} decisions`);
       DEC.all.addEventListener("click", () => {
         const first = [...DEC.rows.values()][DEC_SHOWN];
         revealDecisions();
@@ -909,8 +916,8 @@
     return panel("fills", { label, title }, h("div", { class: "cp-scroll" }, h("div", { class: "cp-ft-in" }, tbl)), foot);
   }
 
-  /* ---------------------------------------------------------------- How it works (five steps in a row) */
-  function howPanel(D) {
+  /* ---------------------------------------------------------------- How it works (a dialog: the five steps, top to bottom) */
+  function howBody(D) {
     const s = D.s || {}, lim = limitsOf(s);
     const v = s.rules_version || 3;
     const searches = ok(lim.web_searches_max) ? `up to ${lim.web_searches_max} web searches` : "a few web searches";
@@ -922,26 +929,37 @@
       ["Booked and published", "Fills booked at the broker's prices; each decision published with its SHA-256 fingerprint.",
         "fills 22:20 · valued ~23:00 Berlin"],
     ];
-    const steps = h("ol", { class: "cp-steps" }, STEPS.map(([t, x, m], i) => h("li", {},
-      h("span", { class: "n", "aria-hidden": "true" }, String(i + 1)), h("b", {}, t), h("span", { class: "t" }, x), h("span", { class: "m" }, m))));
-    const rules = h("a", { class: "cp-btn", href: RULES_HREF, "aria-haspopup": "dialog" }, `Rules v${v}`);
-    return panel("how", { label: "Twice a week · times are Berlin time", title: "How it works", tools: rules }, steps,
+    /* role=list: Safari drops the list semantics of an unstyled list; the step's number is in its position */
+    const steps = h("ol", { class: "cp-steps", role: "list" }, STEPS.map(([t, x, m], i) => h("li", {},
+      h("span", { class: "n", "aria-hidden": "true" }, String(i + 1)),
+      h("div", { class: "s" }, h("b", {}, t), h("span", { class: "t" }, x), h("span", { class: "m" }, m)))));
+    /* Rules opens in place of this dialog (one at a time); closing it gives focus back to what opened How it works */
+    const rules = h("a", { class: "cp-btn pri", href: RULES_HREF, "aria-haspopup": "dialog" }, `Rules v${v}`);
+    return [
+      h("p", { class: "cp-dlg-lead" }, "Twice a week · times are Berlin time"),
+      steps,
       h("p", { class: "cp-hint" }, "A Wednesday decision trades on Thursday, a Saturday decision on Monday. If the broker cannot be " +
-        "reached, a fill is simulated at that day's Lang & Schwarz session end (mid ± 0.05%, $1 per order) and marked as simulated."));
+        "reached, a fill is simulated at that day's Lang & Schwarz session end (mid ± 0.05%, $1 per order) and marked as simulated."),
+      h("p", { class: "cp-dlg-act" }, rules),
+    ];
   }
 
-  /* ---------------------------------------------------------------- Verify */
-  function verifyPanel(D) {
+  /* ---------------------------------------------------------------- Verify (a dialog). Recompute marks the decisions'
+     rows on the page (fp-ok, fp-bad) and says how many match */
+  function verifyBody(D) {
     const s = D.s || {}, ups = (D.up && D.up.updates) || [];
     const v = s.rules_version || 3;
     const checks = ups.filter((u) => u.fingerprinted && u.sha256).map((u) => [u.fingerprinted, u.sha256, u.date]);
     if (s.rules_json && s.rules_hash) checks.push([s.rules_json, s.rules_hash, "rules"]);
     const can = !!(window.crypto && crypto.subtle) && checks.length > 0;
     const status = h("span", { class: "cp-vstat", role: "status" }, can ? `${plural(checks.length, "fingerprint")} to check` : "");
-    const btn = can ? h("button", { class: "cp-btn", type: "button" }, "Recompute here") : null;
+    const btn = can ? h("button", { class: "cp-btn pri", type: "button" }, "Recompute here") : null;
     if (btn) {
+      /* once only. aria-disabled, not disabled: a disabled button would drop the focus to the page, outside the dialog;
+         this one keeps it, and the status line (role=status) reads the result */
       btn.addEventListener("click", async () => {
-        btn.disabled = true;
+        if (btn.getAttribute("aria-disabled") === "true") return;
+        btn.setAttribute("aria-disabled", "true");
         let good = 0;
         for (const [text, want, what] of checks) {
           const same = (await sha256(text)) === want;
@@ -965,7 +983,9 @@
         h("pre", {}, h("code", {}, "jq -j '.updates[0].fingerprinted' decisions.json | shasum -a 256")),
         h("p", {}, "To check that a decision was not edited after the fact, compare its fingerprint with the same decision in " +
           "earlier versions of this site on GitHub.")));
-    return panel("ver", { label: built ? `Snapshot ${built}` : "Public record", title: "Verify" },
+    /* the snapshot's time on the public site (the local app is live: no line) */
+    return [
+      built ? h("p", { class: "cp-dlg-lead" }, `Snapshot ${built}`) : null,
       h("dl", { class: "cp-vlist" },
         row(`Rules v${v}`, s.rules_fixed_on ? h("span", { class: "cp-muted2" }, `fixed ${day(s.rules_fixed_on)} `) : null,
           fingerprint(s.rules_hash, "the rules", { long: true })),
@@ -974,20 +994,32 @@
         row("Data", h("span", { class: "cp-dl" }, files.map(([name, d]) => h("button", {
           class: "cp-btn sm", type: "button", disabled: d ? null : true, onclick: () => download(name, d, s.as_of),
         }, `${name}.json`))))),
-      how);
+      how,
+    ];
   }
 
-  /* ---------------------------------------------------------------- dialogs: Rules v3, Legal */
-  const DLG = {};                                // the dialogs by name ("rules", "legal")
-  let dlgBack = null;                            // what had focus when a dialog opened: it gets it back on close
+  /* ---------------------------------------------------------------- dialogs: How it works, Verify, Rules v3, Legal.
+     One open at a time: a dialog opened from another (Rules from How it works) takes its place, and when the last one
+     closes (Esc, the ✕, a click on the backdrop) focus goes back to what opened the first */
+  const DLG = {};                                // the dialogs by name ("how", "verify", "rules", "legal")
+  let dlgBack = null;                            // what had focus when the first dialog opened: it gets it back at the end
+  const openOne = () => Object.values(DLG).find((x) => x.open) || null;
   function makeDialog(id, title, body) {
     const d = h("dialog", { class: "cp-dialog", id: `cp-dlg-${id}`, "aria-labelledby": `cp-dlg-${id}-t` });
     const close = h("button", { class: "cp-x", type: "button", "aria-label": "Close" }, xIc());
     close.addEventListener("click", () => d.close());
     d.append(h("div", { class: "cp-dlg-in" }, h("header", { class: "cp-dlg-h" }, h("h2", { id: `cp-dlg-${id}-t` }, title), close),
-      h("div", { class: "cp-dlg-b" }, body)));
-    d.addEventListener("click", (e) => { if (e.target === d) d.close(); });     // a click on the backdrop
+      h("div", { class: "cp-dlg-b" }, body)),
+      h("p", { class: "sr-only cp-dlg-live", "aria-live": "polite" }));   // announce() writes here while the dialog is open
+    /* a click on the backdrop (the dialog element itself, around its box) closes it; a press that began inside the box,
+       such as selecting text and letting go outside, does not */
+    let downOut = false;
+    d.addEventListener("pointerdown", (e) => { downOut = e.target === d; });
+    d.addEventListener("click", (e) => { if (e.target === d && downOut) d.close(); downOut = false; });
+    /* "close" comes after the dialog has closed (a queued event): when another dialog has opened in its place, focus
+       stays there */
     d.addEventListener("close", () => {
+      if (openOne()) return;
       const back = dlgBack;
       dlgBack = null;
       if (back && back.isConnected && typeof back.focus === "function") back.focus({ preventScroll: true });
@@ -1021,6 +1053,8 @@
       ];
     }
     const ss = s || {};
+    DLG.how = makeDialog("how", "How it works", howBody(D));
+    DLG.verify = makeDialog("verify", "Verify", verifyBody(D));
     DLG.rules = makeDialog("rules", `Rules v${ss.rules_version || 3}`, rules);
     DLG.legal = makeDialog("legal", "Legal and sources", [
       h("p", {}, h("strong", {}, "Paper money · educational · not investment advice")),
@@ -1033,8 +1067,12 @@
   function openDialog(which) {
     const d = DLG[which];
     if (!d || d.open) return;
-    const a = document.activeElement;
-    dlgBack = a && a !== document.body ? a : null;
+    const cur = openOne();
+    if (cur) cur.close();                        // one at a time: dlgBack still names what opened the first
+    else {
+      const a = document.activeElement;
+      dlgBack = a && a !== document.body ? a : null;
+    }
     if (typeof d.showModal === "function") d.showModal();
     else d.setAttribute("open", "");
   }
@@ -1044,13 +1082,13 @@
     const sk = (area) => h("div", { class: `cp-panel cp-skel p-${area}` });
     return h("div", { class: "cp", "aria-busy": "true" }, h("p", { class: "sr-only", role: "status" }, "Loading the portfolio…"),
       h("div", { class: "cp-dash" }, sk("port"), sk("perf"), sk("hold"), sk("dec"), sk("risk"),
-        h("div", { class: "cp-side" }, sk("alloc"), sk("fills")), sk("how"), sk("ver")));
+        h("div", { class: "cp-side" }, sk("alloc"), sk("fills"))));
   }
 
   /* ---------------------------------------------------------------- the page
-     A link to #/cp in the page (the disclaimer's and the footer's "Legal", the Rules button) is handled here, without
-     loading anything: ?open=legal and ?open=rules open their dialog, anything else goes to the top. The address stays
-     #/cp (replaceState: one page, no history entries). */
+     A link to #/cp in the page (the top bar's How it works and Verify, the footer's four links, the disclaimer's "Legal",
+     the Rules button in How it works) is handled here, without loading anything: ?open=how, verify, rules and legal open
+     their dialog, anything else goes to the top. The address stays #/cp (replaceState: one page, no history entries). */
   /* the one-line disclaimer above the panels. The public page has its own band (#pub-disclaimer, written by publish.py);
      the local app gets the same markup here */
   const band = () => ($("pub-disclaimer") ? null : h("div", { class: "pub-disclaimer", role: "note", "aria-label": "Disclaimer" },
@@ -1111,7 +1149,7 @@
       statusPill(D.s);
       topPills(D.s);
       const dash = h("div", { class: "cp-dash" }, portPanel(D), perfPanel(D), holdPanel(D), decPanel(D), riskPanel(D),
-        h("div", { class: "cp-side" }, allocPanel(D), fillsPanel(D)), howPanel(D), verifyPanel(D));
+        h("div", { class: "cp-side" }, allocPanel(D), fillsPanel(D)));
       el.replaceChildren(...[band(), h("div", { class: "cp" }, dash, h("p", { class: "sr-only", id: "cp-announce", "aria-live": "polite" }))]
         .filter(Boolean));
       dialogs(D);

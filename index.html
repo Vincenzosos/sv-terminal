@@ -18,13 +18,13 @@
 <meta property="og:image:height" content="627">
 <meta property="og:image:alt" content="Claude Portfolio: US stocks picked by Claude twice a week, measured against the S&amp;P 500. Paper money.">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="icon.svg?v=20261115141843" type="image/svg+xml">
+<link rel="icon" href="icon.svg?v=20261115174447" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=20261115141843">
-<link rel="stylesheet" href="css/static.css?v=20261115141843">
-<link rel="stylesheet" href="css/cp.css?v=20261115141843">
+<link rel="stylesheet" href="app.css?v=20261115174447">
+<link rel="stylesheet" href="css/static.css?v=20261115174447">
+<link rel="stylesheet" href="css/cp.css?v=20261115174447">
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js" integrity="sha384-stKllnUqA9AD0gsKCuUtf5XlqAW7PwIgDagoNsTWkjkBmJ/GZ/uHTgEBxdLV2VSK" crossorigin="anonymous" defer></script>
 <meta name="author" content="Vincenzo Silvestri">
 <link rel="author" href="https://www.linkedin.com/in/vincenzopiosilvestri">
@@ -34,8 +34,12 @@
 <header class="top">
   <div class="top-inner">
     <div class="cp-brand">
-      <h1 class="cp-h1">Claude Portfolio</h1>
-      <p class="cp-tagline"><span>Can Claude beat the S&amp;P 500?</span><span class="cp-sep" aria-hidden="true"> · </span><span class="nw">paper money</span><span class="cp-by" id="cp-by"></span></p>
+      <svg class="cp-mark" viewBox="2.4 2.4 19.2 19.2" width="30" height="30" fill="none" stroke="currentColor" aria-hidden="true" focusable="false"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="1.3" stroke-width="1.3"/><path d="M10.6 9.2V7.4H6.6v4.6h4v4.6h-4v-1.8" stroke-width="1.55"/><path d="M12.9 7.4l2.55 9.2 2.55-9.2" stroke-width="1.55" stroke-linejoin="bevel"/></svg>
+      <div class="cp-brand-t">
+        <h1 class="cp-h1">Claude Portfolio</h1>
+        <nav class="cp-links" aria-label="About the portfolio"><a href="#/cp?open=how" aria-haspopup="dialog">How it works</a><a href="#/cp?open=verify" aria-haspopup="dialog">Verify</a></nav>
+        <p class="cp-tagline"><span>Can Claude beat the S&amp;P 500?</span><span class="cp-sep" aria-hidden="true"> · </span><span class="nw">paper money</span><span class="cp-by" id="cp-by"></span></p>
+      </div>
     </div>
     <nav class="tabs" id="tabs" aria-label="Pages" hidden>
       <a href="#/cp" data-nav="cp" data-ws="paper" title="Claude Portfolio"><b>Claude Portfolio</b><small>paper money · US stocks</small></a>
@@ -59,7 +63,7 @@
 <div class="pub-disclaimer" id="pub-disclaimer" role="note" aria-label="Disclaimer"><p>Paper money · educational · not investment advice · not affiliated with Anthropic; Claude is used as a tool <span class="nw">· <a href="#/cp?open=legal">Legal</a></span></p></div>
 <main class="page" id="page" tabindex="-1"></main>
 <footer class="foot">
-  <p>Public snapshot · read-only · not affiliated with Anthropic · prices: Lang &amp; Schwarz, indicative · charts: TradingView · built by <a href="https://www.linkedin.com/in/vincenzopiosilvestri" rel="author noopener" target="_blank">Vincenzo Silvestri<span class="sr-only"> (opens in a new tab)</span></a> with Claude Code · <span class="nw"><a href="#/cp?open=legal">Legal</a></span></p>
+  <p>Public snapshot · read-only · not affiliated with Anthropic · prices: Lang &amp; Schwarz, indicative · charts: TradingView · built by <span class="nw"><a href="https://www.linkedin.com/in/vincenzopiosilvestri" rel="author noopener" target="_blank">Vincenzo Silvestri<span class="sr-only"> (opens in a new tab)</span></a></span> with <span class="nw">Claude Code</span> <span class="nw">· <a href="#/cp?open=how" aria-haspopup="dialog">How it works</a></span> <span class="nw">· <a href="#/cp?open=verify" aria-haspopup="dialog">Verify</a></span> <span class="nw">· <a href="#/cp?open=rules" aria-haspopup="dialog">Rules v3</a></span> <span class="nw">· <a href="#/cp?open=legal" aria-haspopup="dialog">Legal</a></span></p>
 </footer>
 <footer class="statusbar" id="statusbar" aria-label="Status" hidden>
   <span class="ws-tag" id="sb-ws">PAPER</span>
@@ -77,11 +81,11 @@
 <div class="tip" id="tip" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="js/static.js?v=20261115141843" defer></script>
-<script src="js/core.js?v=20261115141843" defer></script>
-<script src="js/charts.js?v=20261115141843" defer></script>
-<script src="js/pages/cp.js?v=20261115141843" defer></script>
-<script src="js/lock.js?v=20261115141843" defer></script>
-<script src="js/main.js?v=20261115141843" defer></script>
+<script src="js/static.js?v=20261115174447" defer></script>
+<script src="js/core.js?v=20261115174447" defer></script>
+<script src="js/charts.js?v=20261115174447" defer></script>
+<script src="js/pages/cp.js?v=20261115174447" defer></script>
+<script src="js/lock.js?v=20261115174447" defer></script>
+<script src="js/main.js?v=20261115174447" defer></script>
 </body>
 </html>
