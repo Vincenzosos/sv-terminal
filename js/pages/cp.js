@@ -302,7 +302,8 @@
       top = [
         h("p", { class: "cp-big" }, vis, h("span", { class: "sr-only" }, m$(s.value))),
         h("p", { class: "cp-chg" }, tn(s.return, `${arrow(s.return)} ${s$(gain)} · ${sp(s.return)}`),
-          h("span", { class: "cp-since" }, ` since ${dayShort(s.start)}`)),
+          // no-break spaces: on a short line the date moves down whole, never "since 19 / Oct"; the space before it can break
+          h("span", { class: "cp-since" }, ` since\u00a0${dayShort(s.start).replace(/ /g, "\u00a0")}`)),
         h("p", { class: "cp-vs" }, "S&P 500 ETF ", h("b", { class: tone(s.bench_return) || null }, sp(s.bench_return)),
           h("span", { class: "cp-sep", "aria-hidden": "true" }, " · "), "gap ", h("b", { class: tone(d) || null }, ptsTxt(d))),
       ];

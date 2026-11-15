@@ -1,6 +1,6 @@
 {
  "v": 1,
- "built": "2026-11-15T17:44:47+01:00",
+ "built": "2026-11-15T20:58:30+01:00",
  "site": "https://vincenzosos.github.io/sv-terminal/",
  "public": {
   "/api/cp/curve": [
@@ -36,5 +36,5 @@
   "private_errors": 0,
   "optional_dropped": 0
  },
- "schedule": "every 30 minutes 07:30-23:00 Berlin on weekdays while the owner's app runs, after the lab's nightly step and after the switch tracker's 23:20 update"
+ "schedule": "after each Claude decision (Wednesday from 23:40, Saturday from 08:30 Berlin), after each weekday valuation (Monday to Friday from 23:25 Berlin) and sometimes by hand, while the owner's computer is on"
 }

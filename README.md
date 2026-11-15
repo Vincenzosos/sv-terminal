@@ -1,66 +1,79 @@
 # SV Terminal · public snapshot
 
-**Paper money only. An educational training exercise run by an AI-designed model. Not a financial service, not investment advice, not a recommendation or solicitation to buy or sell any security. The owner provides no investment services. Simulated results do not predict future results.**
+**Paper money only: an educational experiment in which Claude, an artificial intelligence (AI) model, makes the decisions. Not affiliated with Anthropic. Not a financial service, not investment advice, not a recommendation or solicitation to buy or sell any security. The owner provides no investment services. Past or simulated results do not predict future results.**
 
 Site: https://vincenzosos.github.io/sv-terminal/
 
 ## What this is
 
-SV Terminal is a personal app that runs on its owner's computer. This repository holds a static, read-only snapshot of it,
-published on GitHub Pages. Nothing here runs a server, takes orders or connects to a broker.
+SV Terminal is a personal app on its owner's computer. This repository is a static, read-only snapshot of its one
+public page, the Claude Portfolio, published on GitHub Pages. Nothing here runs a server, places orders or holds
+credentials.
 
-- **Trading Lab (public).** A paper-money exercise: an AI-designed model trades a pretend €10,000 book of
-  European shares on real prices, with a broker's €1 order fee, the bid-ask spread and the 2026 financial transaction
-  taxes applied as costs. It shows everything it does, including open paper positions and the next paper orders, so the
-  record can be checked. It places no real orders, holds no credentials and has no link to any broker account.
-- **How it works (public).** The lab's rules in plain words, its costs so far, the ten tests fixed in advance and every
-  detail behind them.
-- **My Portfolio (locked).** The owner's real savings, briefing and alerts: personal data. They are published only inside one
-  encrypted file (`data/locked.bin`) that opens in the browser with a code. Nothing from that section is stored here in
-  clear.
+## The Claude Portfolio
+
+- **Start:** October 19, 2026, $100,000 of paper money in US dollars.
+- **Decisions:** twice a week Claude, through the owner's Claude Code, sets target weights: Wednesday evening on that
+  day's Lang & Schwarz session-end prices, Saturday morning on Friday's. It reads a brief built by the program and may
+  run up to four web searches.
+- **Rules** (version 3, fixed before the first trade): 10 to 15 companies of the Standard & Poor's 500 (S&P 500)
+  index; 3% to 10% in each; cash up to 20%; at most 3 companies in or out per decision; whole shares; no short
+  selling, leverage, options, futures or crypto. The program adjusts a decision that breaks them and lists each
+  change, or rejects it when fewer than 10 valid companies are left.
+- **Orders:** on the following Thursday or Monday, market-on-close orders go to an Interactive Brokers demo account
+  and fill at the US closing auction; the site records those fills. If no broker fills are recorded that day, for
+  example because the broker cannot be reached or the US market is closed, fills are simulated at that day's
+  Lang & Schwarz session-end mid price ± 0.05%, $1 per order, and marked as simulated.
+- **Benchmark:** an S&P 500 exchange-traded fund (ETF), iShares Core S&P 500 (accumulating). It is not traded: the
+  same $100,000 goes in at its October 19, 2026 price, with no fees.
+
+## What you can check
+
+- Each decision has a SHA-256 fingerprint (Secure Hash Algorithm, 256 bits) computed from its exact text: its date,
+  target weights and Claude's full answer. The rules have one too.
+- The page's Verify dialog recomputes them in your browser and lets you download the portfolio's data (summary,
+  holdings, decisions and curve) as JavaScript Object Notation (JSON) files.
+- The decision job asks for a new snapshot right after each decision, before its orders. Since October 17, 2026, each
+  published snapshot is a new commit on top of the previous ones on `gh-pages` (none when nothing changed), so a
+  fingerprint can be compared with earlier versions.
 
 ## Not advice
 
-This is an educational training exercise, run by an AI-designed model. It is not a financial service, not investment
-advice, and not a recommendation or solicitation to buy or sell any security. The owner provides no investment
-services. Simulated (paper) results do not predict future results. Backtests use today's index members (survivorship
-bias) and were designed after reading the research; only the live paper record since the lab's registration date is
-out of sample.
+This is paper money and an educational experiment. It is not a financial service, not investment advice and not a
+recommendation or solicitation to buy or sell any security. The owner provides no investment services. Past or
+simulated results do not predict future results. The site is not affiliated with Anthropic; Claude is used as a tool.
 
 ## Data
 
-- **Prices:** Lang & Schwarz Exchange indicative quotes (ls-tc.de), fetched by the owner's app for personal use; they
-  are indications, not trades, and can differ from any broker's prices.
-- **Costs and taxes:** the €1 order fee and the Italian, French and Spanish financial transaction taxes as published
-  for 2026; the lab's rules page lists each source.
-- Every number on the lab pages comes from those files or from arithmetic on them.
+- **Prices:** Lang & Schwarz indicative quotes (ls-tc.de) in euros, fetched by the owner's app for personal use and
+  converted to dollars at Lang & Schwarz's euro-to-dollar exchange rate of the same day. They are indications, not
+  trades, and can differ from the broker's prices.
+- **Fills:** the Interactive Brokers demo account's own, when it can be reached.
+- **Members:** Wikipedia's "List of S&P 500 companies" (Creative Commons Attribution-ShareAlike 4.0).
+- **Risk-free rate** (Sharpe ratio, alpha): the US 3-month Treasury bill, Federal Reserve Economic Data (FRED)
+  series DTB3.
+- **Charts:** TradingView Lightweight Charts.
 
 ## When it updates
 
-The owner's app rebuilds the snapshot and pushes it here:
+Jobs on the owner's computer publish a new snapshot, in Berlin time:
 
-- about every 30 minutes between 07:30 and 23:00 Berlin time on weekdays, while the owner's computer runs the app;
-- after the lab's nightly step (after the 23:00 session end) and after the evening update at 23:20;
-- by hand.
+- after each decision: Wednesday from 23:40, Saturday from 08:30;
+- after each weekday's valuation: Monday to Friday from 23:25, after the Lang & Schwarz session end;
+- sometimes by hand.
 
-The status bar of the site shows `updated <time>` (the top bar says SNAPSHOT). When the owner's computer is off, the snapshot simply
-stays as it was. Each push replaces the previous one (a single commit on `gh-pages`).
-
-## How the locked part works
-
-`data/locked.bin` = a small header (format, PBKDF2 rounds, 16-byte salt, 12-byte IV) followed by AES-256-GCM
-ciphertext of a gzip-compressed JSON map. The key is PBKDF2-HMAC-SHA256 of the code, 600,000 rounds. The page derives
-it with WebCrypto and decrypts in the browser; the code and the data are never sent anywhere. The derived key is kept in
-`sessionStorage` for the tab and is forgotten when the tab closes.
+The broker job (Monday and Thursday at 18:00, 20:15 and 22:20) publishes nothing; its fills appear with that night's
+valuation. A job missed while the computer sleeps runs when it wakes. While the computer is off, the snapshot stays
+as it was. The page shows when its snapshot was taken.
 
 ## Files
 
-- `index.html`, `app.css`, `css/`, `js/`: the app's own pages, plus `js/static.js` (serves the snapshot instead of a
-  server) and `js/lock.js` (lock screen, snapshot status, disclaimer).
-- `data/index.json`: the public answers and when the snapshot was taken; `data/p/*.json`: one file per answer (page 2,
-  3… of a paged answer, or a filtered one, may hold only what differs from the unfiltered answer; `js/static.js` puts
-  it back together).
-- `data/locked.bin`: the encrypted My Portfolio section (with its briefing and alerts).
-
-Every page carries `<meta name="robots" content="noindex, nofollow">`, which asks search engines not to index it.
-(Crawlers read `robots.txt` only at the root of a domain, so the copy in this folder is a courtesy, not the control.)
+- `index.html`: the page. It carries `<meta name="robots" content="noindex, nofollow">`, which asks search engines
+  not to index it.
+- `app.css`, `css/`: styles. `js/`: the page's code, plus `js/static.js`, which serves the page's data from `data/`
+  and refuses any change, and `js/lock.js`, which turns off the live connection. Both also carry code and comments
+  left from earlier versions of the site that this page does not need.
+- `data/index.json`: when the snapshot was taken and the list of answers, each with its file in `data/p/`.
+  `data/p/`: one file per answer.
+- `og.png`: link preview. `icon.svg`: tab icon. `.nojekyll`: an empty file for GitHub Pages. `README.md`: this file.
+- `robots.txt` disallows all crawling, but crawlers read it only at a domain's root: the meta tag is the control.

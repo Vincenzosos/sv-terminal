@@ -20,8 +20,9 @@
    the tick itself 11.5:1 on the cash part). The top bar's two quiet links are the secondary grey (7.4:1 on the page).
    A link in running text is underlined as well (the azure outline colour, 3.3:1), as the azure against the grey text
    around it is only 1.2:1: colour is never a link's only cue.
-   Layout: 12 columns from 1200px (tighter below 1440px), two from 768px, one below (16px gutters). How it works and
-   Verify are dialogs (the top bar's and the footer's links), not panels. All motion is off under prefers-reduced-motion.
+   Layout: 12 columns from 1200px (tighter below 1440px, Holdings kept wide enough for its names), two from 768px, one
+   below (16px gutters). How it works and Verify are dialogs (the top bar's and the footer's links), not panels. All
+   motion is off under prefers-reduced-motion.
    Class prefix cp-. */
 
 /* ================================================================ tokens */
@@ -60,6 +61,11 @@
 }
 @media (max-width: 1439px) {
   :root { --cp-gap: 12px; --cp-pad: 16px; --cp-gutter: 20px; --cp-plot: 252px; --cp-top: 62px; }
+}
+/* the narrowest desktops: 9px gaps and 16px gutters give back the room a wider Holdings takes (the grid, 1200–1439px),
+   enough for the Performance header and the decisions table on one line each even beside a 17px classic scroll bar */
+@media (min-width: 1200px) and (max-width: 1279px) {
+  :root { --cp-gap: 9px; --cp-gutter: 16px; }
 }
 @media (max-width: 767px) {
   :root { --cp-gap: 12px; --cp-pad: 14px; --cp-gutter: 16px; --cp-plot: 240px; }
@@ -160,15 +166,15 @@ body[data-page="cp"] .top-right {
 @media (min-width: 1200px) and (max-width: 1439px) {
   body[data-page="cp"] .top-inner { column-gap: 16px; }
   body[data-page="cp"] .top-right, .cp-pills { gap: 6px; }
-  .cp-pill, .cp-status { padding: 0 10px; gap: 6px; font-size: 12.5px; }
+  .cp-pill, .cp-status { padding: 0 9px; gap: 6px; font-size: 12.5px; }
 }
 /* the narrowest desktops: a smaller mark and the status pill's short form (as on phones; its full words stay in its label
-   and tooltip), so the tagline keeps to one line */
+   and tooltip), so the tagline keeps to one line (here and from 1280px, also beside a 17px classic scroll bar) */
 @media (min-width: 1200px) and (max-width: 1279px) {
   body[data-page="cp"] .top-inner { column-gap: 12px; }
   .cp-brand { gap: 10px; }
   .cp-mark { width: 26px; height: 26px; }
-  .cp-pill, .cp-status { padding: 0 9px; }
+  .cp-pill, .cp-status { padding: 0 8px; }
   .cp-status .lg { display: none; }
 }
 @media (max-width: 1199px) {
@@ -307,6 +313,7 @@ body[data-page="cp"] a.cp-btn { color: var(--cp-text); text-decoration: none; }
 /* ---------------------------------------------------------------- Portfolio */
 .p-port .cp-pb { display: flex; flex-direction: column; flex: 1 1 auto; }
 .cp-big { font: 700 38px / 1.05 var(--cp-font); letter-spacing: -0.025em; color: var(--cp-text); }
+/* "since 19 Oct" is written with no-break spaces (cp.js), so on a short line the date moves down whole, never "since 19 / Oct" */
 .cp-chg { margin-top: 10px; font-size: 14px; font-weight: 600; }
 .cp-since { color: var(--cp-text-2); font-weight: 400; }
 .cp-vs { margin-top: 6px; font-size: 13px; color: var(--cp-text-2); }
@@ -575,29 +582,55 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
 .cp[aria-busy] .cp-dash > * { animation: cp-shimmer 1.6s linear infinite; }
 @keyframes cp-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-/* ================================================================ 1200–1439px: the same grid, tighter */
+/* ================================================================ 1200–1439px: the same grid, tighter
+   Holdings keeps the width its names need: the even grid gave it 281px at 1200px ("Merck ...", "Targa ..."). Its three
+   tracks are at least 100px (about 320px with the gaps), Portfolio's and Risk's at least 87px (their 281px at 1200px), so
+   Performance and Decisions give up the difference (about 550px at 1200px); from about 1372px the tracks are even again.
+   Its rows are a little tighter too (a 40px ticker, 6px gaps): about 110px for the name, so "Merck & Co.", "Nucor" and
+   "Targa Resources" show whole and only the longest names end in "...". So that the narrower Performance and Decisions
+   keep the rows of the even grid, the chart's readout and footer have smaller gaps (one line each), and below 1280px
+   the panel headers' gap and the decisions table's cells too (6px: its Changes cell no taller, and it fits beside a
+   classic scroll bar) */
 @media (min-width: 1200px) and (max-width: 1439px) {
   .cp-big { font-size: 33px; }
   .c-ven { max-width: 92px; }
+  .cp-dash { grid-template-columns: repeat(3, minmax(87px, 1fr)) repeat(6, minmax(0, 1fr)) repeat(3, minmax(100px, 1fr)); }
+  .cp-hl-h, .cp-hrow, .cp-hl-cash { grid-template-columns: 40px minmax(0, 1fr) 42px 52px 10px; column-gap: 6px; padding-left: 4px; padding-right: 4px; }
+  .cp-hl-h.no-g, .cp-hl.no-g .cp-hrow, .cp-hl-cash.no-g { grid-template-columns: 40px minmax(0, 1fr) 50px 10px; }
+  .cp-tk { width: 40px; }
+  .cp-hdet { padding-left: 50px; }
+  .cp-ro { column-gap: 10px; }
+  .cp-pf { column-gap: 12px; }
+  .cp-keys { column-gap: 10px; }
+}
+@media (min-width: 1200px) and (max-width: 1279px) {
+  .cp-ph { column-gap: 8px; }
+  .cp-dt td, .cp-dt thead th { padding-left: 6px; padding-right: 6px; }   /* the outer cells keep 0 (:first-child, :last-child) */
 }
 
 /* ================================================================ 768–1199px: two columns, the chart on top
-   panels in pairs of about the same height: Portfolio with Holdings, then Risk with the right column of the desktop
-   (Allocation over Recent fills, whose list takes the height Risk leaves) */
+   panels in pairs of about the same height: Portfolio with Holdings, then Risk with Recent fills (whose list takes the
+   height Risk sets: some seven fills, not one), and Allocation across the width as the last row, its sectors in two
+   columns read down. The desktop's right column (.cp-side) gives its two panels to the grid, here as on phones */
 @media (max-width: 1199px) {
   .cp-dash {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas: "perf perf" "port hold" "dec dec" "risk side";
+    grid-template-areas: "perf perf" "port hold" "dec dec" "risk fills" "alloc alloc";
   }
+  .cp-side { display: contents; }
+  .p-alloc { grid-area: alloc; }
+  .p-fills { grid-area: fills; }
   .p-hold .cp-scroll { min-height: 280px; }
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .p-alloc .cp-secs { display: block; columns: 2; column-gap: 40px; }
+  /* the name column as wide as the longest sector name ("Communication Services"), so each bar starts near its name */
+  .p-alloc .cp-secs li { grid-template-columns: 12em minmax(0, 1fr) 44px; break-inside: avoid; margin-bottom: 5px; }
 }
 
 /* ================================================================ phones: one column, the order of the brief */
 @media (max-width: 767px) {
   .cp-dash { grid-template-columns: minmax(0, 1fr); grid-template-areas: "port" "perf" "hold" "dec" "risk" "alloc" "fills"; }
-  .cp-side { display: contents; }
-  .p-alloc { grid-area: alloc; }
-  .p-fills { grid-area: fills; }
   .cp-h1 { font-size: 18px; }
   .cp-by { display: block; }
   .cp-by .cp-sep { display: none; }
