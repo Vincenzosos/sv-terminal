@@ -1,6 +1,8 @@
 "use strict";
-/* Start-up and the shell: three tabs (My Portfolio · Trading Lab · How it works), the search box for funds and shares,
-   the keys (optional: Alt+1–3 tabs, / search, Esc closes), clock, connection state, the alerts badge, the router. The app is dark only. */
+/* Start-up and the shell. Since 17 Oct 2026 there is one page, the Claude Portfolio (NAV in core.js). The rest of the
+   shell (the search box for funds and shares, the alerts badge, the clock, the quote stream) stays for pages that may
+   return to NAV; with one page it is hidden and makes no requests (SHELL_EXTRAS below). Also here: the keys (Alt+digit
+   for a tab, / search, Esc closes), the connection state and the router. The app is dark only. */
 
 /* ---------------------------------------------------------------- funds, for the search box (the catalogue) */
 let FUNDS = [];

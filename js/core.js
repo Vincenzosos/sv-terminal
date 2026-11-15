@@ -176,17 +176,16 @@ function renderLive() {
 }
 
 /* ================================================================ router
-   Three pages, one per tab: #/portfolio (My Portfolio, real money), #/lab (Trading Lab, paper money), #/about (How it
-   works). A page's sections are reached with ?sec=<id> (scrolled into view) and ?open=<id> (a collapsed "Details"
-   section opened). Every route of the former layout (Overview, Explore, Alerts, the ten lab sub-pages, the model desk) is
-   sent to the tab and section that now holds it (legacyRoute). */
+   One page since 17 Oct 2026: #/cp, the Claude Portfolio (paper money). Every former route (the three tabs of September
+   and October, and the older Overview, Explore, Alerts and lab pages) lands on it (legacyRoute). MODES keeps the
+   real-money mode for a page that may return to NAV; no page uses it today. */
 const Pages = {};           // id -> {title, render(el, params), update?(params) → true if handled in place, onQuote?(key, q, prev), leave?()}
 const APP_NAME = "SV Terminal";
 const MODES = {
   invest: { label: "My Portfolio", sub: "real money · read-only", home: "portfolio", ws: "real" },
   trade: { label: "Claude Portfolio", sub: "paper money · weekly", home: "cp", ws: "paper" },
 };
-/* the three tabs; key = Alt+digit. "How it works" explains the Trading Lab and is public: it wears the paper chrome. */
+/* the tabs; key = Alt+digit (one since 17 Oct 2026) */
 const NAV = [
   { id: "cp", label: "Claude Portfolio", mode: "trade", key: "1", code: "CP" },     /* the only page since 17 Oct 2026 */
 ];

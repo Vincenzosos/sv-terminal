@@ -38,9 +38,9 @@
   --ink-4:       #5d6573;
 
   /* ---------------------------------------------------------------- workspace chrome
-     Amber is the My Portfolio chrome: panel numbers, function keys, the active tab,
-     the prompt, the primary button. Azzurro (light blue) replaces it everywhere in the Trading Lab
-     (paper) workspace, through --ws. Chrome never colours data. */
+     Amber is the real-money workspace's chrome (no page uses it since 17 Oct 2026): panel numbers,
+     function keys, the active tab, the prompt, the primary button. Azzurro (light blue) replaces it
+     in the paper workspace, through --ws. Chrome never colours data. */
   --amber:       #ffa62b;   /* 10.0 [card], 7.8 [raised-2] */
   --amber-dim:   #9c6a24;   /* rules and frames only */
   --amber-wash:  rgba(255, 166, 43, 0.10);
@@ -295,7 +295,7 @@ header.top {
 .logo svg { color: var(--ws); flex: none; }
 .logo span { font: var(--fw-bold) 13px / 1 var(--font-mono); letter-spacing: 0.18em; }
 
-/* the three tabs: My Portfolio (amber), Trading Lab and How it works (azzurro). Each wears its own colour, always. */
+/* the tabs (one since 17 Oct 2026, hidden on the Claude Portfolio): each wears its workspace's colour, always. */
 .tabs { display: flex; align-items: stretch; border-right: var(--bw) solid var(--line-2); }
 .tabs a {
   position: relative; display: grid; align-content: center; gap: 2px; min-width: 132px; padding: 0 var(--sp-5);
