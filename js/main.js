@@ -139,7 +139,7 @@ $("drawer").addEventListener("click", (e) => { if (e.target === $("drawer")) clo
 
 /* ---------------------------------------------------------------- clock (Rome) */
 function tickClocks() {
-  const ct = $("clock-t");                              // the public site shows the snapshot time there instead (lock.js)
+  const ct = $("clock-t");                              // not on the public site: a snapshot has no clock
   if (ct && !window.BussolaStatic) ct.textContent = zoned("Europe/Rome").hm;
 }
 
@@ -152,7 +152,7 @@ async function pollInbox() {
     const newest = box[0] && box[0].id;
     if (lastSeen && newest && newest !== lastSeen && "Notification" in window && Notification.permission === "granted") new Notification(`SV Terminal · ${box[0].title}`, { body: box[0].body, icon: "icon.svg" });
     lastSeen = newest;
-  } catch (_) { /* server restarting, or the locked public site */ }
+  } catch (_) { /* server restarting */ }
 }
 
 /* ---------------------------------------------------------------- start */

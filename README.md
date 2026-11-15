@@ -71,8 +71,8 @@ as it was. The page shows when its snapshot was taken.
 - `index.html`: the page. It carries `<meta name="robots" content="noindex, nofollow">`, which asks search engines
   not to index it.
 - `app.css`, `css/`: styles. `js/`: the page's code, plus `js/static.js`, which serves the page's data from `data/`
-  and refuses any change, and `js/lock.js`, which turns off the live connection. Both also carry code and comments
-  left from earlier versions of the site that this page does not need.
+  and refuses any change, and `js/lock.js`, which marks the page as this public copy and turns off the live
+  connection (its name is left from an earlier version of the site).
 - `data/index.json`: when the snapshot was taken and the list of answers, each with its file in `data/p/`.
   `data/p/`: one file per answer.
 - `og.png`: link preview. `icon.svg`: tab icon. `.nojekyll`: an empty file for GitHub Pages. `README.md`: this file.

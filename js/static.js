@@ -1,49 +1,14 @@
 "use strict";
-/* SV Terminal · public snapshot, part 1 of 2: the data layer. publish.py loads this file BEFORE core.js on the published
-   site only; the app on the Mac never loads it.
-   - BussolaCrypto: opens data/locked.bin (PBKDF2-HMAC-SHA256 → AES-256-GCM → gzip). Node runs the same code in the
-     round-trip test (tests/test_publish.py), so it uses nothing but WebCrypto, Blob and DecompressionStream.
-   - A fetch shim for "/api/…" GETs: public answers come from data/p/<sha1(url)>.json (listed in data/index.json; a
-     paged answer may be stored as its differences from page one, BussolaDelta puts it back together),
-     private ones from memory once the code has opened the bundle; anything else is "Not in this snapshot". POSTs are
-     refused politely: the snapshot is read-only.
-   - The default route is the Trading Lab (#/lab). There is no live stream. js/lock.js does the rest. */
-
-/* ================================================================ crypto (browser and Node) */
-(function (root) {
-  const MAGIC = [0x42, 0x53, 0x4c, 0x4b];            // "BSLK"
-  const HEADER = 37;                                  // magic 4 · version 1 · iterations 4 (BE) · salt 16 · iv 12
-  function parseHeader(buf) {
-    const b = new Uint8Array(buf);
-    if (b.length < HEADER + 16 || MAGIC.some((x, i) => b[i] !== x)) throw new Error("Not an SV Terminal bundle");
-    if (b[4] !== 1) throw new Error(`Unknown bundle version ${b[4]}`);
-    const iterations = new DataView(b.buffer, b.byteOffset, b.byteLength).getUint32(5, false);
-    return { version: b[4], iterations, salt: b.slice(9, 25), iv: b.slice(25, 37), header: b.slice(0, HEADER), body: b.slice(HEADER) };
-  }
-  async function deriveKey(code, salt, iterations, extractable = true) {
-    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(String(code)), "PBKDF2", false, ["deriveKey"]);
-    return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, extractable, ["decrypt"]);
-  }
-  async function gunzip(bytes) {
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
-    return new Uint8Array(await new Response(stream).arrayBuffer());
-  }
-  /* throws when the key is wrong (AES-GCM checks its tag over the header and the ciphertext) */
-  async function openWithKey(key, h) {
-    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: h.iv, additionalData: h.header, tagLength: 128 }, key, h.body);
-    return JSON.parse(new TextDecoder().decode(await gunzip(new Uint8Array(plain))));
-  }
-  async function open(buf, code) {
-    const h = parseHeader(buf);
-    const key = await deriveKey(code, h.salt, h.iterations, true);
-    return { data: await openWithKey(key, h), key, header: h };
-  }
-  const b64 = (u8) => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
-  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-  async function exportKey(key) { return b64(new Uint8Array(await crypto.subtle.exportKey("raw", key))); }
-  async function importKey(s) { return crypto.subtle.importKey("raw", unb64(s), { name: "AES-GCM" }, false, ["decrypt"]); }
-  root.BussolaCrypto = { parseHeader, deriveKey, gunzip, openWithKey, open, exportKey, importKey, b64, unb64 };
-})(typeof window !== "undefined" ? window : globalThis);
+/* SV Terminal · public snapshot, part 1 of 2: the data layer. The public site is one read-only page, the Claude Portfolio
+   (#/cp), paper money only. publish.py loads this file BEFORE core.js on the published site; the app on the Mac never
+   loads it.
+   - BussolaNorm: the key of an "/api/…" URL, the same rule as publish.norm_url (tests/test_publish.py runs this file in
+     Node to compare the two).
+   - A fetch shim for "/api/…" GETs: an answer comes from data/p/<sha1(key)>.json, listed in data/index.json (a paged
+     answer may be stored as its differences from page one: BussolaDelta puts it back together). A URL the snapshot does
+     not hold answers 404 "Not in this snapshot". Anything but a GET answers 405: the snapshot is read-only.
+   - No live stream: EventSource never connects and /api/stream answers 404 (js/lock.js also turns Live.connect off).
+   - The site's bare address opens the page (#/cp). */
 
 /* ================================================================ URL keys (the same rule as publish.norm_url) */
 (function (root) {
@@ -81,20 +46,15 @@
 (function () {
   if (typeof window === "undefined" || !window.document) return;
   const ORIG = window.fetch.bind(window);
-  /* the parts of the API that are public (publish.py PUBLIC_PREFIXES): everything else, the market board included, is
-     the locked section */
-  const PUBLIC = [/^\/api\/cp\//, /^\/api\/glossary$/, /^\/api\/status$/];
-  const S = window.BussolaStatic = {
-    index: null, indexError: null, priv: null, unlocked: false, misses: [], locked: [], refused: [],
-    isPublic: (key) => PUBLIC.some((re) => re.test(key.split("?")[0])),
-  };
-  /* the Trading Lab is the front page (#/ lands there) */
+  /* misses and refused: the last 200 URLs answered "Not in this snapshot" and the last 200 writes refused (for a look in
+     the console) */
+  const S = window.BussolaStatic = { index: null, indexError: null, misses: [], refused: [] };
+  /* the one page is the front page (#/ lands there) */
   if (!location.hash || location.hash === "#" || location.hash === "#/") history.replaceState(null, "", `${location.pathname}${location.search}#/cp`);
   S.ready = ORIG("data/index.json", { cache: "no-cache" })
     .then((r) => { if (!r.ok) throw new Error(`data/index.json: HTTP ${r.status}`); return r.json(); })
     .then((d) => { S.index = d; return d; })
     .catch((e) => { S.indexError = e.message; S.index = { public: {} }; return S.index; });
-  S.setPrivate = (data) => { S.priv = (data && data.urls) || {}; S.privMeta = data || {}; S.unlocked = true; };
   const note = (list, key) => { list.push(key); if (list.length > 200) list.splice(0, list.length - 200); };
   const json = (obj, status) => new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json; charset=utf-8" } });
   const cache = new Map();                            // public files already fetched in this tab
@@ -124,19 +84,11 @@
     }
     if (key.startsWith("/api/stream")) return json({ error: "No live stream in the public snapshot" }, 404);
     await S.ready;
-    if (S.priv && Object.prototype.hasOwnProperty.call(S.priv, key)) {
-      const e = S.priv[key];
-      return new Response(e.t === "text" ? e.b : JSON.stringify(e.b), { status: e.s || 200, headers: { "Content-Type": "application/json; charset=utf-8" } });
-    }
     const pub = (S.index.public || {})[key];
     if (pub) {
       let body;
       try { body = await publicFile(pub[0]); } catch (e) { return json({ error: e.message }, 502); }
       return new Response(body, { status: pub[1] || 200, headers: { "Content-Type": "application/json; charset=utf-8" } });
-    }
-    if (!S.unlocked && !S.isPublic(key)) {
-      note(S.locked, key);
-      return json({ error: "Locked: this is the owner's private portfolio. Enter the code on the My Portfolio page." }, 403);
     }
     note(S.misses, key);
     return json({ error: "Not in this snapshot" }, 404);

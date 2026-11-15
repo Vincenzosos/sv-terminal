@@ -926,7 +926,7 @@
       ["Brief", "S&P 500 prices, trends and sector moves condensed into candidates.", "Python · Lang & Schwarz prices"],
       ["Claude decides", `Target weights, with a thesis and the risks for each stock; ${searches}.`, "Claude Code · Wed evening, Sat morning"],
       ["Rules check", `Rules v${v} enforced: fixed or rejected, then fingerprinted before any order exists.`, "the program"],
-      ["Orders at Interactive Brokers (demo)", "Market-on-close, filled at the US closing auction.", "next trading day · 20:15 Berlin"],
+      ["Orders at Interactive Brokers (demo)", "Market-on-close, filled at the US closing auction.", "Thursday or Monday · 20:15 Berlin"],
       ["Booked and published", "Fills booked at the broker's prices; each decision published with its SHA-256 fingerprint.",
         "fills 22:20 · valued ~23:00 Berlin"],
     ];

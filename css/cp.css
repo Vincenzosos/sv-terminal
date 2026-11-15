@@ -84,7 +84,7 @@ body[data-page="cp"] {
 }
 body[data-page="cp"] ::selection { background: rgba(108, 180, 255, 0.3); color: var(--cp-text); }
 /* the legacy shell (search, alerts, clock, quote stream, status bar): not part of this site */
-#search, #search-toggle, #bell, #live, #clock, #tabs, #statusbar, #pub-lock { display: none !important; }
+#search, #search-toggle, #bell, #live, #clock, #tabs, #statusbar { display: none !important; }
 body[data-page="cp"] :focus-visible { outline: 2px solid var(--cp-accent); outline-offset: 2px; }
 body[data-page="cp"] [tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
 /* a link in running text is underlined in the soft azure, so its colour is not its only cue (the azure against the grey
