@@ -218,12 +218,12 @@ const Router = {
       const to = legacyRoute(page ? `${page}/${sub}` : path, params) || `#/${(window.BussolaStatic ? "lab" : "portfolio")}`;
       if (to !== location.hash) { location.replace(to); return; }
     }
-    if (this.current === null && (params.has("sec") || params.has("open"))) {   // opening the site: always at the top
-      params.delete("sec"); params.delete("open");                              // (of its tab: ?tab= stays, 29 Oct 2026)
+    if (this.current === null && (params.has("sec") || params.has("open") || params.has("tab"))) {   // opening the site:
+      params.delete("sec"); params.delete("open"); params.delete("tab");   // always at the top (15 Nov 2026: one page, no tabs)
       const rest = String(params);
       history.replaceState(null, "", `${location.pathname}${location.search}#/${page}${rest ? `?${rest}` : ""}`);
     }
-    /* the same page with other parameters (a tab of the Claude Portfolio): the page moves there itself, nothing reloads */
+    /* the same page with other parameters (the Claude Portfolio's dialogs): the page handles them itself, nothing reloads */
     if (this.current === page && Pages[page].update && Pages[page].update(params)) return;
     if (this.current && Pages[this.current] && Pages[this.current].leave) Pages[this.current].leave();
     Live.want("page", []);

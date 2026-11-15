@@ -24,8 +24,8 @@ function syncNav(page) {
     tag.textContent = ws === "paper" ? "PAPER" : "REAL MONEY";
     tag.title = ws === "paper" ? "Claude Portfolio: paper money only, no real orders" : "My Portfolio: your real Trade Republic holdings (read-only)";
   }
-  const disc = $("foot-disc");                          // the one-line disclaimer; the full text is in How it works › Legal
-  if (disc) disc.textContent = ws === "paper" ? "Paper money · educational · not investment advice · not affiliated with Anthropic" : "Your own portfolio · facts, not advice";
+  const disc = $("foot-disc");                          // the one-line disclaimer; the full text is in the Legal dialog
+  if (disc) disc.textContent = ws === "paper" ? "Paper money · educational · not investment advice · not affiliated with Anthropic; Claude is used as a tool" : "Your own portfolio · facts, not advice";
   CUR_CODE = nav.code;
   statusSource();
 }
