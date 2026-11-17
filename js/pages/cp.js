@@ -49,7 +49,8 @@
   const p0 = (x) => (ok(x) ? fmt.p0.format(x) : "—");
   const tn = (x, text) => h("span", { class: ok(x) ? tone(x) || null : null }, text);
   const gapPts = (a, b) => (ok(a) && ok(b) ? (a - b) * 100 : null);
-  const ptsTxt = (d) => (ok(d) ? `${sign(d, fmt.n2)} pts` : "—");
+  const ptsTxt = (d, f = fmt.n2) => (ok(d) ? `${sign(d, f)} pts` : "—");
+  const sp1 = (x) => sp(x, fmt.p1);
   const wdOf = (s) => WD[new Date(`${s.slice(0, 10)}T12:00:00Z`).getUTCDay()];
   const wday = (s) => (s ? `${wdOf(s)} ${dayShort(s)}` : "—");
   const BERLIN_DAY = new Intl.DateTimeFormat("en-CA", {
@@ -283,6 +284,23 @@
   }
 
   /* ---------------------------------------------------------------- Portfolio */
+  /* the holdings against the S&P 500 ETF, each since it was bought (cp_api since_bought, 17 Nov 2026): how many are
+     ahead, then one segment per holding, largest first, azure when ahead and grey when not (a count, not a signed number:
+     no green or red). Nothing without those figures (an app not restarted since) */
+  function aheadStrip(D) {
+    const rows = ((D.hd && D.hd.rows) || []).filter((r) => r.since_bought && ok(r.since_bought.return) && ok(r.since_bought.etf));
+    if (rows.length < 2) return null;
+    const isAhead = (r) => r.since_bought.return > r.since_bought.etf;
+    const n = rows.filter(isAhead).length;
+    const fig = (r) => `${r.ticker} ${sp1(r.since_bought.return)}, ETF ${sp1(r.since_bought.etf)}`;
+    return h("div", { class: "cp-ahead" },
+      /* "holdings" goes where the panel is narrowest (1200-1439px), so the line stays one line there too */
+      h("p", {}, h("b", {}, `${n} of ${rows.length}`), h("span", { class: "lg" }, " holdings"), " ahead of the ETF since bought"),
+      h("div", { class: "cp-ahead-bar", role: "img",
+        "aria-label": `${n} of ${rows.length} holdings ahead of the S&P 500 ETF, each since it was bought. Ahead: ` +
+          `${rows.filter(isAhead).map((r) => r.ticker).join(", ") || "none"}.` },
+      rows.map((r) => h("i", { class: isAhead(r) ? "on" : null, title: fig(r) }))));
+  }
   function portPanel(D) {
     const s = D.s;
     const title = "Portfolio";
@@ -325,7 +343,7 @@
       ];
     }
     return panel("port", { label: "Claude Portfolio · paper money", dot: live ? "ok" : "wait", title },
-      h("div", { class: "cp-pb" }, h("div", { class: "cp-port-top" }, top), h("dl", { class: "cp-kvs" }, cells),
+      h("div", { class: "cp-pb" }, h("div", { class: "cp-port-top" }, top), live ? aheadStrip(D) : null, h("dl", { class: "cp-kvs" }, cells),
         h("p", { class: "cp-foot" }, `Lang & Schwarz indicative prices${built ? ` · snapshot ${built}` : ""}`)));
   }
 
@@ -342,18 +360,22 @@
   };
   function cpChartOptions(mode) {
     const pct = mode === "pct";
-    const nf = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: pct ? 1 : 0, maximumFractionDigits: pct ? 2 : 0 });
+    /* two decimals in percent, on the axis and on the last values' tags alike, as in the readout ("−5.60%", never "−5.6%"
+       beside "−3.52%") */
+    const nf = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: pct ? 2 : 0, maximumFractionDigits: pct ? 2 : 0 });
     return {
       layout: {
         background: { type: "solid", color: css("--cp-panel") }, textColor: css("--cp-text-2"),
         fontFamily: "Inter, system-ui, -apple-system, sans-serif", fontSize: 12, attributionLogo: false,
       },
       grid: { vertLines: { visible: false }, horzLines: { color: css("--cp-grid") } },
-      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.06, bottom: 0.06 }, minimumWidth: 76 },
-      timeScale: { borderVisible: false, fixLeftEdge: true, fixRightEdge: true },
+      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.08 }, minimumWidth: 76 },
+      /* the edges are not fixed: drawChart leaves half a session of room at each end, so the first and last markers
+         are not cut by the plot's edge (the reader cannot scroll or zoom: handleScroll, handleScale) */
+      timeScale: { borderVisible: false, fixLeftEdge: false, fixRightEdge: false },
       crosshair: {
         mode: 1, horzLine: { visible: false, labelVisible: false },
-        vertLine: { color: css("--cp-text-3"), width: 1, style: 2, labelVisible: false },
+        vertLine: { color: css("--cp-line-2"), width: 1, style: 0, labelVisible: false },
       },
       localization: {
         priceFormatter: pct ? (p) => `${p > 0.0049 ? "+" : p < -0.0049 ? MINUS : ""}${nf.format(Math.abs(p))}%`
@@ -436,6 +458,7 @@
     const area = chart.addAreaSeries({
       lineColor: css("--cp-series-claude"), topColor: css("--cp-area-top"), bottomColor: css("--cp-area-bot"), lineWidth: 2,
       priceLineVisible: false, lastValueVisible: false, crosshairMarkerRadius: 4, crosshairMarkerBorderColor: bg,
+      crosshairMarkerBorderWidth: 2,
     });
     area.setData(V.pts.map(([d, v]) => ({ time: d, value: val(v, V.bv) })));
     const etf = V.pts.filter((p) => ok(p[2]));
@@ -471,7 +494,9 @@
         marks.push({ time: u.date, position: "aboveBar", shape: "circle", color: css("--cp-text-2"), size: C.narrow ? 0.4 : 0.5 });
       }
     }
-    area.setMarkers(marks.sort((a, b) => (a.time < b.time ? -1 : 1)));
+    /* the line ends on a dot: where Claude stands at the last valuation */
+    marks.push({ time: last[0], position: "inBar", shape: "circle", color: css("--cp-series-claude"), size: C.narrow ? 0.5 : 0.6 });
+    area.setMarkers(marks.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)));
     const index = new Map(V.pts.map((p, i) => [p[0], i]));
     chart.subscribeCrosshairMove((p) => {
       const k = p && p.time ? timeKey(p.time) : null;
@@ -481,7 +506,9 @@
       const ev = p && p.time ? C.events.get(timeKey(p.time)) : null;
       if (ev) openDecision(ev.u.date);
     });
-    chart.timeScale().fitContent();
+    /* every session in view, with half a session's room at each end (fitContent would put the first and last points on
+       the plot's edges, cutting their markers in two) */
+    chart.timeScale().setVisibleLogicalRange({ from: -0.5, to: V.pts.length - 0.5 });
     if (!C.revealed && !still()) { C.revealed = true; C.plot.classList.add("reveal"); }
   }
   function perfPanel(D) {
@@ -519,10 +546,11 @@
     ];
     const kinds = new Set(ups.filter((u) => u.filled_on && dates.has(u.filled_on)).map(fillKind));
     const marks = { fill: kinds.size > 0, dec: ups.some((u) => !u.filled_on && dates.has(u.date)) };
-    /* the values behind the chart, for screen readers (the chart itself is a picture) */
-    const table = h("table", { class: "sr-only" }, h("caption", {}, "Value after each session"),
+    /* the values behind the chart, for screen readers (the chart itself is a picture). Hidden by a wrapper: a table keeps
+       the width of its content whatever its own width says, so on its own it reached 1px past a 320px screen */
+    const table = h("div", { class: "sr-only" }, h("table", {}, h("caption", {}, "Value after each session"),
       h("thead", {}, h("tr", {}, ["Date", "Claude Portfolio", "S&P 500 ETF"].map((x) => h("th", { scope: "col" }, x)))),
-      h("tbody", {}, [...pts].reverse().map(([d, v, b]) => h("tr", {}, h("td", {}, day(d)), h("td", {}, m$(v)), h("td", {}, m$(b))))));
+      h("tbody", {}, [...pts].reverse().map(([d, v, b]) => h("tr", {}, h("td", {}, day(d)), h("td", {}, m$(v)), h("td", {}, m$(b)))))));
     const foot = h("div", { class: "cp-pf" },
       h("p", { class: "cp-keys" }, marks.dec ? h("span", {}, h("span", { class: "k-dec", "aria-hidden": "true" }, "●"), " decision") : null,
         ["buy", "sell", "both"].filter((k) => kinds.has(k)).map((k) =>
@@ -533,20 +561,40 @@
   }
 
   /* ---------------------------------------------------------------- Holdings */
+  /* Claude's conviction in a name (from the decision of 18 Nov 2026): a small label with a three-step meter */
+  const CONV = { high: 3, medium: 2, low: 1 };
+  function convLabel(c) {
+    if (!CONV[c]) return null;
+    return h("span", { class: "cp-conv", title: "How sure Claude is of this holding, in its own words: high, medium or low" },
+      h("span", { class: "bars", "aria-hidden": "true" }, [1, 2, 3].map((i) => h("i", { class: i <= CONV[c] ? "on" : null }))),
+      `${c[0].toUpperCase()}${c.slice(1)} conviction`);
+  }
+  /* "Since bought 19 Oct: +4.2% · ETF +1.1%": the holding's gain (the Gain column) and the S&P 500 ETF over the same days,
+     the same dollars on the days of its buys (cp_api since_bought) */
+  function sinceLine(sb) {
+    if (!sb || !ok(sb.return) || !sb.from) return null;
+    return h("p", { class: "cp-vsetf" }, `Since bought ${dayShort(sb.from)}${sb.buys > 1 ? ` (${sb.buys} buys)` : ""}: `,
+      h("b", { class: tone(sb.return) || null }, sp1(sb.return)), h("span", { class: "cp-sep", "aria-hidden": "true" }, " · "),
+      "ETF ", h("b", { class: ok(sb.etf) ? tone(sb.etf) || null : null }, sp1(sb.etf)));
+  }
   function holdRow(r, live) {
     const id = `hold-${r.ticker}`;
-    const can = !!(r.thesis || r.risks);
+    const since = live ? sinceLine(r.since_bought) : null;
+    const can = !!(r.thesis || r.risks || r.exit_if || since);
     const kids = [h("span", { class: "cp-tk" }, r.ticker),
       h("span", { class: "cp-nm" }, h("b", {}, r.name || r.ticker), h("small", {}, r.sector || "")),
       h("span", { class: "w" }, h("span", { class: "sr-only" }, live ? ", weight " : ", target "), wp(r.weight)),
       live ? h("span", { class: `g ${tone(r.gain_pct)}` }, h("span", { class: "sr-only" }, ", gain since bought "), sp(r.gain_pct, fmt.p1)) : null];
     if (!can) return h("li", {}, h("div", { class: "cp-hrow" }, kids));
     const btn = h("button", { class: "cp-hrow", type: "button", "aria-expanded": "false", "aria-controls": id, title: r.name || null }, kids, chev());
-    const meta = live ? [`${fmt.n4.format(r.shares)} shares`, `paid ${m$(r.paid)}`, `last price ${m$(r.price)}`, `held since ${r.since ? day(r.since) : "—"}`]
-      : [`target weight ${wp(r.weight)}`];
+    const meta = live ? [`${fmt.n4.format(r.shares)} shares`, `paid ${m$(r.paid)}`, `last price ${m$(r.price)}`,
+      since ? null : `held since ${r.since ? day(r.since) : "—"}`].filter(Boolean) : [`target weight ${wp(r.weight)}`];
+    const conv = convLabel(r.conviction);
     const det = h("div", { class: "cp-hdet", id, hidden: true },
+      since || conv ? h("div", { class: "cp-hdet-top" }, since, conv) : null,
       r.thesis ? h("p", {}, h("span", { class: "k" }, "Why Claude holds it"), prose(r.thesis)) : null,
       r.risks ? h("p", {}, h("span", { class: "k" }, "What could go wrong"), prose(r.risks)) : null,
+      r.exit_if ? h("p", {}, h("span", { class: "k" }, "Exit if"), prose(r.exit_if)) : null,
       h("p", { class: "meta" }, meta.join(" · ")));
     btn.addEventListener("click", () => {
       const open = btn.getAttribute("aria-expanded") !== "true";
@@ -662,7 +710,12 @@
         rfLine.length ? h("p", {}, ...rfLine) : null));
     const start = s.start || (D.cv && D.cv.start);
     const label = sessions ? `${plural(sessions, "session")}${start ? ` since ${dayShort(start)}` : ""}` : "No sessions yet";
-    return panel("risk", { label, dot: toGo ? "wait" : "ok", title }, tbl, h("p", { class: "cp-caveat" }, caveat), how);
+    /* Claude's own reading of the portfolio's risk, from its latest decision that gives one (from 18 Nov 2026), under the
+       measured figures: its words, marked as such */
+    const view = ((D.up && D.up.updates) || []).find((u) => u.portfolio_risk);
+    const said = view ? h("figure", { class: "cp-quote cp-rq" }, h("blockquote", {}, `“${prose(view.portfolio_risk)}”`),
+      h("figcaption", {}, `Claude on the portfolio's risk, ${wday((view.decided_at && berlinDate(view.decided_at)) || view.date)}`)) : null;
+    return panel("risk", { label, dot: toGo ? "wait" : "ok", title }, tbl, h("p", { class: "cp-caveat" }, caveat), said, how);
   }
 
   /* ---------------------------------------------------------------- Decisions (like a broker's order list) */
@@ -714,8 +767,59 @@
   function changeChips(u, max = 3) {
     const all = changeList(u);
     if (!all.length) return h("span", { class: "cp-na" }, "—");
-    return h("span", { class: "cp-chips" }, all.slice(0, max).map(([cls, t, title]) => h("span", { class: `cp-chip ${cls}`, title }, t)),
+    /* the ticker in full weight, the kind of change ("trim", "add") lighter: +HUM, MRK trim */
+    const label = (t) => { const [a, b] = t.split(" "); return b ? [a, h("span", { class: "k" }, `\u00a0${b}`)] : t; };
+    return h("span", { class: "cp-chips" }, all.slice(0, max).map(([cls, t, title]) => h("span", { class: `cp-chip ${cls}`, title }, label(t))),
       all.length > max ? h("span", { class: "cp-chip more", title: all.slice(max).map((x) => x[1]).join(" ") }, `${all.length - max} more`) : null);
+  }
+  /* each fill of a decision against the S&P 500 ETF over the same days (cp_api _scorecard, 17 Nov 2026): the price change
+     from the fill to the latest price and the ETF's change over the same sessions, then the trade's effect in points:
+     for a buy the share's change minus the ETF's, for a sale the ETF's change minus the share's (a share that did worse
+     after it was sold makes the sale positive), so green means the trade helped either way (17 Nov 2026) */
+  function scorecard(u) {
+    const rows = (u.scorecard || []).filter((x) => x && x.ticker);
+    if (!rows.length) return null;
+    const dates = rows.map((x) => x.to).filter(Boolean).sort();
+    const to = dates[dates.length - 1];
+    const buys = rows.filter((x) => x.side !== "sell" && ok(x.change) && ok(x.etf));
+    const ahead = buys.filter((x) => x.change > x.etf).length;
+    const sn = (x) => h("td", { class: `num ${ok(x) ? tone(x) : ""}`.trim() }, sp1(x));
+    const body = rows.map((x) => {
+      const sell = x.side === "sell";
+      const g = ok(x.change) && ok(x.etf) ? (sell ? x.etf - x.change : x.change - x.etf) * 100 : null;
+      return h("tr", {}, h("th", { scope: "row" }, x.ticker),
+        h("td", { class: "f" }, `${sell ? "Sold" : "Bought"} ${x.date ? dayShort(x.date) : ""}`, h("span", { class: "px" }, ` at ${m$(x.price)}`)),
+        ok(x.change) ? sn(x.change) : h("td", { class: "num cp-na", title: "No valuation after this fill yet" }, "—"),
+        ok(x.change) ? sn(x.etf) : h("td", { class: "num cp-na" }, "—"),
+        h("td", { class: `num g ${ok(g) ? tone(g) : ""}`.trim() }, ptsTxt(g, fmt.n1),
+          x.to && to && x.to !== to ? h("small", {}, ` to ${dayShort(x.to)}`) : null));
+    });
+    const sells = rows.some((x) => x.side === "sell");
+    return h("div", { class: "cp-sc" },
+      h("p", { class: "k" }, "Since the fills", to ? ` · to ${dayShort(to)}` : "",
+        buys.length > 1 ? h("span", { class: "cp-sc-n" }, ` · ${ahead} of ${buys.length} buys ahead of the ETF`) : null),
+      h("div", { class: "cp-sc-w" }, h("table", { class: "cp-sc-t" },
+        h("caption", { class: "sr-only" }, "Each fill of this decision against the S&P 500 ETF over the same days"),
+        h("thead", {}, h("tr", {}, h("th", { scope: "col" }, "Stock"), h("th", { scope: "col", class: "f" }, "Fill"),
+          h("th", { scope: "col", class: "num" }, sells ? "Price since" : "Since bought"), h("th", { scope: "col", class: "num" }, "ETF"),
+          h("th", { scope: "col", class: "num", title: "What the trade gained against the ETF, in points" }, "Effect"))),
+        h("tbody", {}, body))),
+      h("p", { class: "cp-sc-x" }, `The price change from each fill to the last valuation${to ? ` (${dayShort(to)})` : ""}, against the ` +
+        "S&P 500 ETF over the same days, before commissions. Effect: what the trade gained against the ETF, in points." +
+        (sells ? " For a sale it is turned around: a share that did worse than the ETF after it was sold makes the sale " +
+        "positive." : "")));
+  }
+  /* a decision's richer answer (method 2, from 18 Nov 2026): what Claude watches, what it looked at and passed on */
+  function decLists(u) {
+    const watch = (u.watch || []).filter((x) => x && x.what);
+    const cons = (u.considered || []).filter((x) => x && x.ticker);
+    if (!watch.length && !cons.length) return null;
+    const sec = (k, items) => h("div", { class: "cp-dd-sec" }, h("p", { class: "k" }, k), h("ul", { class: "cp-dd-list" }, items));
+    return h("div", { class: "cp-dd-cols" },
+      watch.length ? sec("Watching", watch.map((x) => h("li", {}, h("span", { class: "d" }, x.date ? wday(x.date) : "Ongoing"),
+        h("span", { class: "t" }, prose(x.what))))) : null,
+      cons.length ? sec("Also considered", cons.map((x) => h("li", {}, h("b", { class: "d" }, x.ticker),
+        h("span", { class: "t" }, x.why_not ? prose(x.why_not) : "No reason given.")))) : null);
   }
   /* a decision made under an earlier rule set: said before Claude's note, whose figures follow those rules */
   function earlierRules(u, s) {
@@ -729,19 +833,32 @@
   function decDetail(u, k, s, names) {
     const when = wday((u.decided_at && berlinDate(u.decided_at)) || u.date);
     const box = h("div", { class: "cp-dd" });
+    /* a decision made with the richer brief and answer of 17 Nov 2026 carries "method 2": a small mark that opens How it
+       works, whose Method changes list says what changed */
+    const method = ok(u.method) && u.method >= 2 ? h("a", { class: "cp-tag", href: HOW_HREF, "aria-haspopup": "dialog",
+      title: "What changed with this method: How it works, Method changes" }, `method ${u.method}`) : null;
     box.append(h("p", { class: "cp-dd-h" }, `Decision ${String(k).padStart(2, "0")} · on the ${dayShort(u.date)} closes`,
-      u.decided_at ? ` · decided ${utcStamp(u.decided_at)}` : "", ok(u.searches) ? ` · web searches: ${u.searches}` : ""));
+      u.decided_at ? ` · decided ${utcStamp(u.decided_at)}` : "", ok(u.searches) ? ` · web searches: ${u.searches}` : "",
+      method ? [" ", method] : null));
     if (u.rules_hash && s && s.rules_hash && u.rules_hash !== s.rules_hash) box.append(h("p", { class: "cp-callout" }, earlierRules(u, s)));
     box.append(u.alert ? h("blockquote", { class: "cp-note" }, `“${prose(u.alert)}”`)
       : h("p", { class: "cp-dd-x" }, u.status === "ok" ? "No note this time."
         : prose(u.reason) || "No readable answer this time; the portfolio stayed as it was."));
     const lines = [];
-    (u.new || []).forEach((x) => lines.push(h("li", {}, h("b", {}, `+${x.ticker}`), ` new, ${wp(x.to)}`, x.thesis ? ` · ${prose(x.thesis)}` : "")));
+    (u.new || []).forEach((x) => lines.push(h("li", {}, h("b", {}, `+${x.ticker}`), ` new, ${wp(x.to)}`,
+      CONV[x.conviction] ? ` · ${x.conviction} conviction` : "", x.thesis ? ` · ${prose(x.thesis)}` : "")));
     (u.closed || []).forEach((x) => lines.push(h("li", {}, h("b", {}, `${MINUS}${x.ticker}`), ` sold, was ${wp(x.from)}`)));
     (u.resized || []).forEach((x) => lines.push(h("li", {}, h("b", {}, x.ticker), ` ${wp(x.from)} → ${wp(x.to)}`)));
     if (lines.length) box.append(h("ul", { class: "cp-dd-chg", "aria-label": "Changes" }, lines));
     const skip = skippedNote(u, s, names);
     if (skip) box.append(skip);
+    if (u.portfolio_risk) {
+      box.append(h("div", { class: "cp-dd-sec" }, h("p", { class: "k" }, "Portfolio risk"), h("p", { class: "t" }, prose(u.portfolio_risk))));
+    }
+    const lists = decLists(u);
+    if (lists) box.append(lists);
+    const sc = scorecard(u);
+    if (sc) box.append(sc);
     const more = (summary, body, cls) => h("details", { class: `cp-more${cls ? ` ${cls}` : ""}` }, h("summary", {}, summary), h("div", {}, body));
     const disc = [];
     if (u.market_view) disc.push(more("Market view", h("p", {}, prose(u.market_view))));
@@ -861,7 +978,16 @@
     const ws = rows.map((r) => r.weight).filter(ok);
     const big = ws.length ? rows.find((r) => r.weight === Math.max(...ws)) : null;
     const cm = ok(lim.cash_max) ? lim.cash_max : null;
-    const label = live ? `By sector · valued ${dayShort(s.as_of)}` : s.pending ? "By sector · target weights" : "By sector";
+    /* the S&P 500's own weight by sector (cp_api sp500_sectors, from 17 Nov 2026) beside the portfolio's: a light tick on
+       each bar and a grey figure, the index's date in the label and its source in the tooltips; the index's sectors Claude
+       does not hold are listed in one line under them. Without that file the panel is as before */
+    const sx = s.sp500_sectors && Array.isArray(s.sp500_sectors.weights) ? s.sp500_sectors : null;
+    const ix = new Map(sx ? sx.weights.filter((x) => x && x.sector && ok(x.weight)).map((x) => [x.sector, x.weight]) : []);
+    const vs = ix.size > 0;
+    const ixOn = vs && sx.as_of ? ` · S&P 500 on ${dayShort(sx.as_of)}` : vs ? " · S&P 500" : "";
+    const ixAbout = vs ? `S&P 500 weights by sector${sx.as_of ? ` on ${day(sx.as_of)}` : ""}` +
+      `${ok(sx.coverage) ? `, ${p0(sx.coverage)} of the index covered` : ""}${sx.source ? `; source: ${sx.source}` : ""}` : null;
+    const label = (live ? `By sector · valued ${dayShort(s.as_of)}` : s.pending ? "By sector · target weights" : "By sector") + ixOn;
     const barLabel = `Invested ${wp(1 - cash)}, cash ${wp(cash)}${cm != null ? `; cash limit ${p0(cm)}` : ""}`;
     const flag = (bad) => (bad ? h("span", { class: "cp-flag" }, " outside the limit") : null);
     /* invested against cash, with a tick where the cash limit starts (one figure outside its limit is flagged, not hidden:
@@ -873,17 +999,33 @@
       h("div", { class: "cp-inv-bar", role: "img", "aria-label": barLabel },
         h("span", { class: "inv", style: `flex:${Math.max(0, 1 - cash)}` }), h("span", { class: "cash", style: `flex:${Math.max(0, cash)}` }),
         cm != null ? h("i", { class: "tick", style: `left:calc(${(1 - cm) * 100}% - 1px)`, title: `cash limit ${p0(cm)}` }) : null));
-    const list = secs.length ? h("ul", { class: "cp-secs", "aria-label": "Weight by sector" },
+    const scale = Math.max(top, ...ix.values());
+    const head = vs && secs.length ? h("div", { class: "cp-secs-h", "aria-hidden": "true" }, h("span", {}, "Sector"),
+      h("span", {}, "Claude"), h("span", { title: ixAbout }, "S&P 500")) : null;
+    const list = secs.length ? h("ul", { class: `cp-secs${vs ? " vs" : ""}`, "aria-label": vs ? "Weight by sector, Claude and the S&P 500" : "Weight by sector" },
       secs.map((x) => {
         const k = plural(count[x.sector] || 0, "stock");
-        return h("li", { title: `${x.sector}: ${k}, ${wp(x.weight)}` }, h("span", { class: "n" }, x.sector, h("span", { class: "sr-only" }, `, ${k}`)),
-          h("span", { class: "cp-track", "aria-hidden": "true" }, h("i", { style: `width:${(x.weight / top) * 100}%` })),
-          h("span", { class: "w" }, wp(x.weight)));
+        const iw = ix.get(x.sector);
+        const said = vs ? `; S&P 500 ${ok(iw) ? wp(iw) : "not listed"}` : "";
+        return h("li", { title: `${x.sector}: ${k}, ${wp(x.weight)}${said}` },
+          h("span", { class: "n" }, x.sector, h("span", { class: "sr-only" }, `, ${k}`)),
+          h("span", { class: "cp-track", "aria-hidden": "true" }, h("i", { style: `width:${(x.weight / (vs ? scale : top)) * 100}%` }),
+            vs && ok(iw) ? h("b", { class: "ix", style: `left:calc(${(iw / scale) * 100}% - 1px)` }) : null),
+          h("span", { class: "w" }, wp(x.weight)),
+          vs ? h("span", { class: "ixw" }, h("span", { class: "lbl" }, " S&P 500 "), ok(iw) ? wp(iw) : "—") : null);
       })) : note("No sectors yet.");
-    const hint = ok(lim.weight_max) ? h("p", { class: "cp-hint" }, `Per company: at most ${p0(lim.weight_max)}`,
-      big ? [` (largest ${big.ticker} ${wp(big.weight)}`, flag(big.weight > lim.weight_max + 0.0005), ")"] : null,
-      ok(lim.weight_min) ? `, at least ${p0(lim.weight_min)}` : null) : null;
-    return panel("alloc", { label, dot: live ? "ok" : "wait", title }, bar, list, hint);
+    const held = new Set(secs.map((x) => x.sector));
+    const out = vs ? [...ix].filter(([k, w]) => !held.has(k) && w > 0) : [];
+    /* from 1200px the short form (one line, so Recent fills below keeps its rows); the full list stays in the tooltip */
+    const outList = out.map(([k, w]) => `${k} ${wp(w)}`).join(", ");
+    const outSum = out.reduce((a, [, w]) => a + w, 0);
+    const none = out.length ? h("p", { class: "cp-secs-out", title: `${ixAbout}. Not held: ${outList}.` },
+      h("span", { class: "full" }, `Not held: ${outList}.`),
+      h("span", { class: "short", "aria-hidden": "true" }, `Not held: ${out.length} ${out.length === 1 ? "sector" : "sectors"}, ${wp(outSum)} of the S&P 500.`)) : null;
+    const hint = ok(lim.weight_max) ? h("p", { class: "cp-hint" },
+      ok(lim.weight_min) ? `Per company: ${p0(lim.weight_min)} to ${p0(lim.weight_max)}` : `Per company: at most ${p0(lim.weight_max)}`,
+      big ? [` (largest ${big.ticker} ${wp(big.weight)}`, flag(big.weight > lim.weight_max + 0.0005), ")"] : null) : null;
+    return panel("alloc", { label, dot: live ? "ok" : "wait", title }, bar, head, list, none, hint);
   }
 
   /* ---------------------------------------------------------------- Recent fills (like a broker's time and sales) */
@@ -917,13 +1059,22 @@
     return panel("fills", { label, title }, h("div", { class: "cp-scroll" }, h("div", { class: "cp-ft-in" }, tbl)), foot);
   }
 
-  /* ---------------------------------------------------------------- How it works (a dialog: the five steps, top to bottom) */
+  /* ---------------------------------------------------------------- How it works (a dialog: the five steps, top to bottom,
+     then the dated changes of method; the rules never change without a new version) */
+  /* [ISO date, the owner's words, verbatim] newest first */
+  const METHOD_CHANGES = [
+    ["2026-11-17", "17 Nov 2026: from the decision of 18 Nov, Claude's brief adds company results and valuations from SEC filings, " +
+      "the S&P 500's sector weights, each holding's thesis and its result since purchase, and Claude's own record. Claude also " +
+      "states, for each holding, what would make it sell, and names the candidates it looked at and passed on. The rules (v3) " +
+      "are unchanged."],
+  ];
   function howBody(D) {
     const s = D.s || {}, lim = limitsOf(s);
     const v = s.rules_version || 3;
     const searches = ok(lim.web_searches_max) ? `up to ${lim.web_searches_max} web searches` : "a few web searches";
     const STEPS = [
-      ["Brief", "S&P 500 prices, trends and sector moves condensed into candidates.", "Python · Lang & Schwarz prices"],
+      ["Brief", "S&P 500 prices, trends and sector moves condensed into candidates; from 18 Nov also company results filed with " +
+        "the US Securities and Exchange Commission (SEC).", "Python · Lang & Schwarz prices · SEC filings"],
       ["Claude decides", `Target weights, with a thesis and the risks for each stock; ${searches}.`, "Claude Code · Wed evening, Sat morning"],
       ["Rules check", `Rules v${v} enforced: fixed or rejected, then fingerprinted before any order exists.`, "the program"],
       ["Orders at Interactive Brokers (demo)", "Market-on-close, filled at the US closing auction.", "Thursday or Monday · 20:15 Berlin"],
@@ -936,11 +1087,18 @@
       h("div", { class: "s" }, h("b", {}, t), h("span", { class: "t" }, x), h("span", { class: "m" }, m)))));
     /* Rules opens in place of this dialog (one at a time); closing it gives focus back to what opened How it works */
     const rules = h("a", { class: "cp-btn pri", href: RULES_HREF, "aria-haspopup": "dialog" }, `Rules v${v}`);
+    /* each entry's text is the owner's, whole: its date is set apart only by its markup */
+    const changes = h("section", { class: "cp-mlog", "aria-labelledby": "cp-mlog-t" }, h("h3", { id: "cp-mlog-t" }, "Method changes"),
+      h("ul", { role: "list" }, METHOD_CHANGES.map(([iso, text]) => {
+        const at = text.indexOf(": ");
+        return h("li", {}, h("time", { datetime: iso }, text.slice(0, at)), text.slice(at));
+      })));
     return [
       h("p", { class: "cp-dlg-lead" }, "Twice a week · times are Berlin time"),
       steps,
       h("p", { class: "cp-hint" }, "A Wednesday decision trades on Thursday, a Saturday decision on Monday. If the broker cannot be " +
         "reached, a fill is simulated at that day's Lang & Schwarz session end (mid ± 0.05%, $1 per order) and marked as simulated."),
+      changes,
       h("p", { class: "cp-dlg-act" }, rules),
     ];
   }

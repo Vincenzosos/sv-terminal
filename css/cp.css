@@ -223,8 +223,12 @@ body[data-page="cp"] details[open] > summary::before { content: ""; transform: r
 .cp-muted2 { color: var(--cp-text-2); }
 .cp-hint { margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--cp-text-2); }
 .cp-flag { color: var(--cp-text); font-weight: 600; }
-.cp-empty { display: grid; place-content: center; gap: 4px; min-height: 120px; padding: 16px; text-align: center; color: var(--cp-text); }
-.cp-empty .sub { color: var(--cp-text-2); font-size: 13px; }
+.cp-empty {
+  display: grid; place-content: center; gap: 4px; min-height: 120px; padding: 16px; text-align: center; color: var(--cp-text);
+  border: 1px dashed var(--cp-line-2); border-radius: var(--cp-r2); font-weight: 500;
+}
+.cp-empty .sub { max-width: 44ch; margin: 0 auto; color: var(--cp-text-2); font-size: 13px; font-weight: 400; }
+.cp-plot.is-empty .cp-empty { border: 0; }
 .cp-clip { position: fixed; left: -9999px; top: 0; opacity: 0; }
 .cp-chev { flex: none; color: var(--cp-text-2); transition: transform var(--cp-dur) var(--cp-ease); }
 [aria-expanded="true"] > .cp-chev { transform: rotate(90deg); }
@@ -320,6 +324,14 @@ body[data-page="cp"] a.cp-btn { color: var(--cp-text); text-decoration: none; }
 .cp-vs b { font-weight: 600; color: var(--cp-text); }
 .cp-kvs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--cp-line); }
 .cp-port-top { padding-bottom: 18px; }
+/* the holdings against the S&P 500 ETF, each since it was bought (17 Nov 2026): the count, then one segment per holding,
+   largest first, azure when ahead (a count, not a signed number: no green or red); it fills the panel's middle */
+.cp-ahead { padding-bottom: 16px; }
+.cp-ahead p { font-size: 12px; line-height: 1.35; color: var(--cp-text-2); }
+.cp-ahead p b { font-weight: 600; color: var(--cp-text); }
+.cp-ahead-bar { display: flex; gap: 3px; height: 6px; margin-top: 8px; }
+.cp-ahead-bar i { flex: 1 1 0; min-width: 0; border-radius: 2px; background: var(--cp-pill); }
+.cp-ahead-bar i.on { background: var(--cp-accent); }
 .cp-kv dt { font: 500 12px / 1.3 var(--cp-font); color: var(--cp-text-2); }
 .cp-kv dd { margin: 3px 0 0; }
 .cp-kv dd b { display: block; font: 600 15px / 1.3 var(--cp-font); color: var(--cp-text); }
@@ -365,7 +377,9 @@ body[data-page="cp"] a.cp-btn { color: var(--cp-text); text-decoration: none; }
   width: 100%; min-height: 50px; padding: 7px 6px; border: 0; border-radius: var(--cp-r3); background: transparent; color: var(--cp-text);
   text-align: left; transition: background-color var(--cp-dur);
 }
-button.cp-hrow:hover { background: var(--cp-raised); }
+button.cp-hrow:hover, button.cp-hrow[aria-expanded="true"] { background: var(--cp-raised); }
+button.cp-hrow:hover > .cp-chev { color: var(--cp-text); }
+.cp-hrow[aria-expanded="true"] > .cp-chev { color: var(--cp-accent); }
 .cp-hrow:focus-visible { outline-offset: -2px; }
 .cp-tk {
   display: inline-grid; place-items: center; width: 42px; height: 32px; border-radius: var(--cp-r3); background: var(--cp-raised);
@@ -382,6 +396,20 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-hdet p + p { margin-top: 8px; }
 .cp-hdet .k { display: block; margin-bottom: 1px; font-size: 12px; font-weight: 500; color: var(--cp-text-2); }
 .cp-hdet .meta { font-size: 12px; color: var(--cp-text-2); }
+.cp-hdet-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin-bottom: 8px; }
+.cp-vsetf { font-size: 12px; line-height: 1.4; color: var(--cp-text-2); }
+.cp-vsetf b { font-weight: 600; color: var(--cp-text); }
+/* Claude's conviction: a small label with a three-step meter, its steps azure */
+.cp-conv {
+  display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px 0 8px; border: 1px solid var(--cp-line-2);
+  border-radius: 999px; font: 500 12px / 1 var(--cp-font); color: var(--cp-text); white-space: nowrap;
+}
+.cp-conv .bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 10px; }
+.cp-conv .bars i { width: 3px; border-radius: 1px; background: var(--cp-pill); }
+.cp-conv .bars i:nth-child(1) { height: 4px; }
+.cp-conv .bars i:nth-child(2) { height: 7px; }
+.cp-conv .bars i:nth-child(3) { height: 10px; }
+.cp-conv .bars i.on { background: var(--cp-accent); }
 .cp-hl-cash { padding: 9px 6px 0; border-top: 1px solid var(--cp-line); font-size: 13px; }
 .cp-hl-cash b { font-weight: 500; }
 .cp-hl-cash .g { color: var(--cp-text-2); font-weight: 500; }
@@ -404,6 +432,8 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-how { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--cp-line); }
 .p-risk .cp-how { margin-top: auto; }
 .p-risk .cp-caveat { margin-bottom: 14px; }
+.p-risk .cp-rq { margin: 0 0 14px; }
+.cp-quote.cp-rq blockquote { display: block; -webkit-line-clamp: unset; overflow: visible; font-size: 13px; }
 .cp-how-b { display: grid; gap: 10px; font-size: 12px; line-height: 1.5; color: var(--cp-text-2); }
 .cp-how-b dl { display: grid; gap: 6px; }
 .cp-how-b dt { font-weight: 600; color: var(--cp-text); }
@@ -437,6 +467,8 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-dt .c-ord { text-align: right; white-space: nowrap; }
 .cp-drow { cursor: pointer; transition: background-color var(--cp-dur); scroll-margin-top: calc(var(--cp-stick) + 20px); }
 .cp-drow:hover > td { background: rgba(255, 255, 255, 0.025); }
+.cp-drow:hover .cp-chev { color: var(--cp-text); }
+.cp-drow.open .cp-chev { color: var(--cp-accent); }
 .cp-drow.open > td { border-bottom-color: transparent; }
 .cp-dbtn {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 2px; margin-left: -2px; border: 0; border-radius: var(--cp-r3);
@@ -456,10 +488,19 @@ button.cp-hrow:hover { background: var(--cp-raised); }
   background: var(--cp-accent-soft); font: 600 12px / 1 var(--cp-font); color: var(--cp-accent); white-space: nowrap;
 }
 .cp-chip.more { border-color: var(--cp-line-2); color: var(--cp-text-2); font-weight: 500; background: transparent; }
+/* a name sold is a grey outline, a resized one a quiet grey label; only a new name wears the azure tint */
+.cp-chip.out { border-color: var(--cp-line-2); background: transparent; color: var(--cp-text); }
+.cp-chip.rs { border-color: var(--cp-line); background: var(--cp-raised); color: var(--cp-text); }
+.cp-chip .k { font-weight: 500; }
+.cp-chip.rs .k { color: var(--cp-text-2); }
 .cp-drow.fp-ok .cp-hash::after { content: " ✓"; color: var(--cp-text); }
 .cp-drow.fp-bad .cp-hash::after { content: " ✗"; color: var(--cp-down); }
 .cp-ddet > td { padding: 0 0 16px !important; border-bottom: 1px solid var(--cp-line); text-align: left !important; cursor: auto; }
-.cp-dd { display: grid; gap: 10px; max-width: 78ch; padding: 2px 0 0 22px; font-size: 13px; line-height: 1.55; color: var(--cp-text-2); }
+/* one column that may shrink below its widest part (the scorecard's table scrolls in its own box instead of widening it) */
+.cp-dd {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-width: 78ch; padding: 2px 0 0 22px; font-size: 13px; line-height: 1.55;
+  color: var(--cp-text-2);
+}
 .cp-dd-h { font-size: 12px; }
 .cp-note { font-size: 14px; line-height: 1.6; color: var(--cp-text); }
 .cp-callout { padding: 8px 12px; border-left: 2px solid var(--cp-text-3); background: var(--cp-raised); border-radius: 0 var(--cp-r3) var(--cp-r3) 0; color: var(--cp-text); }
@@ -471,6 +512,43 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-dd-more details > div { color: var(--cp-text); }
 .cp-dd-more ul { display: grid; gap: 4px; list-style: disc; padding-left: 18px; }
 .cp-dd-proof { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 12px; }
+/* method 2 (17 Nov 2026): a small mark in the detail's first line; it opens How it works */
+body[data-page="cp"] a.cp-tag {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 7px; margin-left: 4px; border: 1px solid var(--cp-accent-line);
+  border-radius: 999px; font: 600 11px / 1 var(--cp-font); color: var(--cp-accent); text-decoration: none; vertical-align: 1px;
+  transition: background-color var(--cp-dur);
+}
+body[data-page="cp"] a.cp-tag:hover { background: var(--cp-accent-soft); }
+.cp-dd-sec .k, .cp-sc .k { margin-bottom: 4px; font-size: 12px; font-weight: 500; color: var(--cp-text-2); }
+.cp-dd-sec .t { color: var(--cp-text); }
+.cp-dd-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px 28px; }
+.cp-dd-list { display: grid; gap: 5px; }
+.cp-dd-list li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
+.cp-dd-list .d { color: var(--cp-text-2); white-space: nowrap; }
+.cp-dd-list b.d { font-weight: 600; color: var(--cp-text); }
+.cp-dd-list .t { color: var(--cp-text); }
+/* the scorecard: each fill against the ETF since, in a small table of its own inside the decisions table (so its cells
+   undo the outer table's: padding, the phones' block layout and hidden head) */
+.cp-sc-w { overflow-x: auto; }
+.cp .cp-sc-t { width: auto; min-width: min(100%, 460px); font-size: 13px; }
+.cp .cp-sc-t thead { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+.cp .cp-sc-t tbody { display: table-row-group; }
+.cp .cp-sc-t th, .cp .cp-sc-t td {
+  padding: 5px 0 5px 16px; border-bottom: 1px solid var(--cp-line); vertical-align: baseline; white-space: nowrap; text-align: right;
+}
+.cp .cp-sc-t th:first-child, .cp .cp-sc-t .f { text-align: left; }
+.cp .cp-sc-t th:first-child { padding-left: 0; }
+.cp .cp-sc-t thead th { padding-top: 0; font-size: 12px; font-weight: 500; color: var(--cp-text-2); }
+.cp .cp-sc-t tbody th { font-weight: 600; color: var(--cp-text); }
+.cp .cp-sc-t td { font-weight: 600; color: var(--cp-text); }
+.cp .cp-sc-t td.f { font-weight: 400; color: var(--cp-text-2); }
+.cp .cp-sc-t td.up { color: var(--cp-up); }
+.cp .cp-sc-t td.down { color: var(--cp-down); }
+.cp .cp-sc-t td.cp-na { color: var(--cp-text-2); font-weight: 400; }
+.cp .cp-sc-t tbody tr:last-child > * { border-bottom: 0; }
+.cp .cp-sc-t small { font-size: 11px; font-weight: 400; color: var(--cp-text-2); }
+.cp-sc-n { font-weight: 400; }
+.cp-sc-x { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--cp-text-2); }
 .cp-all { margin-top: auto; align-self: flex-start; }
 .p-dec .cp-dt-wrap { margin-bottom: 12px; }
 
@@ -492,6 +570,25 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-secs .w { text-align: right; font-weight: 600; }
 .cp-track { height: 6px; border-radius: 3px; background: var(--cp-raised); overflow: hidden; }
 .cp-track i { display: block; height: 100%; border-radius: 3px; background: var(--cp-accent); }
+/* with the S&P 500's weights (17 Nov 2026): a head row, a grey figure after Claude's, a light tick on each bar where the
+   index stands (a ring of the panel's colour keeps it apart from the azure), and the index's other sectors in one line */
+.cp-secs-h, .cp-secs.vs li { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) 44px 50px; gap: 8px; }
+.cp-secs-h { display: grid; margin-top: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--cp-line); font-size: 12px; color: var(--cp-text-2); }
+.cp-secs-h span:first-child { grid-column: 1 / 3; }
+.cp-secs-h span:nth-child(n + 2) { text-align: right; white-space: nowrap; }
+.cp-secs-h + .cp-secs { margin-top: 6px; }
+.cp-secs.vs .cp-track { position: relative; overflow: visible; }
+.cp-track .ix { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 1px; background: var(--cp-text); box-shadow: 0 0 0 1.5px var(--cp-panel); }
+.cp-secs .ixw { text-align: right; color: var(--cp-text-2); white-space: nowrap; }
+/* "S&P 500" before the grey figure: for screen readers, and on screen where the head row is not shown (tablets) */
+.cp-secs .ixw .lbl { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.cp-secs-out { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--cp-text-2); }
+.cp-secs-out .short { display: none; }
+/* from 1200px Allocation shares its column with Recent fills: the not-held sectors in one line (the list in the tooltip) */
+@media (min-width: 1200px) {
+  .cp-secs-out .full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .cp-secs-out .short { display: inline; }
+}
 
 /* ---------------------------------------------------------------- Recent fills (a broker's time and sales) */
 .p-fills { flex: 1 1 auto; }
@@ -545,6 +642,11 @@ button.cp-hrow:hover { background: var(--cp-raised); }
 .cp-steps .t { font-size: 13.5px; line-height: 1.5; color: var(--cp-text); }
 .cp-steps .m { font-size: 12px; line-height: 1.45; color: var(--cp-text-2); }
 .cp-dialog .cp-hint { margin-top: 0; padding-top: 12px; border-top: 1px solid var(--cp-line); font-size: 13px; }
+.cp-mlog { padding-top: 12px; border-top: 1px solid var(--cp-line); }
+.cp-mlog h3 { margin: 0 0 8px; font: 600 14px / 1.35 var(--cp-font); color: var(--cp-text); }
+.cp-mlog ul { display: grid; gap: 8px; }
+.cp-mlog li { font-size: 13px; line-height: 1.55; color: var(--cp-text); }
+.cp-mlog time { font-weight: 600; }
 
 /* Verify: the record's rows, then how to check a fingerprint */
 .cp-vlist { display: grid; gap: 0; }
@@ -593,6 +695,7 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
    classic scroll bar) */
 @media (min-width: 1200px) and (max-width: 1439px) {
   .cp-big { font-size: 33px; }
+  .cp-ahead .lg { display: none; }
   .c-ven { max-width: 92px; }
   .cp-dash { grid-template-columns: repeat(3, minmax(87px, 1fr)) repeat(6, minmax(0, 1fr)) repeat(3, minmax(100px, 1fr)); }
   .cp-hl-h, .cp-hrow, .cp-hl-cash { grid-template-columns: 40px minmax(0, 1fr) 42px 52px 10px; column-gap: 6px; padding-left: 4px; padding-right: 4px; }
@@ -626,6 +729,9 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
   .p-alloc .cp-secs { display: block; columns: 2; column-gap: 40px; }
   /* the name column as wide as the longest sector name ("Communication Services"), so each bar starts near its name */
   .p-alloc .cp-secs li { grid-template-columns: 12em minmax(0, 1fr) 44px; break-inside: avoid; margin-bottom: 5px; }
+  .p-alloc .cp-secs.vs li { grid-template-columns: 12em minmax(0, 1fr) 44px 92px; }
+  .p-alloc .cp-secs-h { display: none; }
+  .p-alloc .cp-secs.vs .ixw .lbl { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; font-size: 12px; }
 }
 
 /* ================================================================ phones: one column, the order of the brief */
@@ -674,6 +780,11 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
   .cp-ddet[hidden] { display: none; }
   .cp-ddet > td { display: block; padding: 0 0 14px; }
   .cp-dd { padding-left: 0; }
+  /* the scorecard on a phone: the fill's day without its price, closer columns, so its five columns fit the screen */
+  .cp .cp-sc-t { font-size: 12px; }
+  .cp .cp-sc-t th, .cp .cp-sc-t td { padding-left: 8px; }
+  .cp .cp-sc-t th:first-child { padding-left: 0; }
+  .cp-sc-t .px { display: none; }
   .cp-vrow { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   /* a dialog takes nearly the whole screen, its body scrolling inside (dvh: the visible height, with the browser's bars) */
   .cp-dialog { width: calc(100vw - 16px); max-width: none; max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); border-radius: 16px; }
