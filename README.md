@@ -16,9 +16,10 @@ credentials.
 - **Decisions:** twice a week Claude, through the owner's Claude Code, sets target weights: Wednesday evening on that
   day's Lang & Schwarz session-end prices, Saturday morning on Friday's. It reads a brief built by the program and may
   run up to four web searches to verify facts. Since November 18, 2026, the brief also carries company figures from
-  Securities and Exchange Commission (SEC) filings, the S&P 500's sector weights and Claude's own earlier theses with
-  their results; Claude states for each holding the condition that would make it sell, and names the candidates it
-  passed on.
+  Securities and Exchange Commission (SEC) filings, the S&P 500's sector weights, Claude's own earlier theses with
+  their results, and a group of candidates chosen on those figures (growing, profitable companies with high free cash
+  flow for their price) besides the ones chosen on price trends; Claude states for each holding the condition that would
+  make it sell, and names the candidates it passed on.
 - **Rules** (version 3, fixed before the first trade): 10 to 15 companies of the Standard & Poor's 500 (S&P 500)
   index; 3% to 10% in each; cash up to 20%; at most 3 companies in or out per decision; whole shares; no short
   selling, leverage, options, futures or crypto. The program adjusts a decision that breaks them and lists each

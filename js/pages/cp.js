@@ -674,7 +674,9 @@
       if (!shown(gate)) return h("tr", {}, name, gated(gate));
       const [a, b] = src(key);
       if (own) return h("tr", {}, name, h("td", {}, f(a)), h("td", {}, f(b)));
-      return h("tr", {}, name, h("td", {}, f(a), gate === "rel" ? h("small", { class: "cp-n" }, ` n = ${n}`) : null), na());
+      /* beta's n goes before its figure on screen (cp.css .cp-fig), so the figure lines up with the others */
+      return h("tr", {}, name, h("td", {}, gate === "rel" ? h("span", { class: "cp-fig" }, f(a), h("small", { class: "cp-n" }, ` n = ${n}`))
+        : f(a)), na());
     });
     const tbl = h("table", { class: "cp-rk" }, h("caption", { class: "sr-only" }, "Risk and return: Claude Portfolio and the S&P 500 ETF"),
       h("thead", {}, h("tr", {}, h("th", { scope: "col" }, h("span", { class: "sr-only" }, "Measure")),
@@ -710,12 +712,25 @@
         rfLine.length ? h("p", {}, ...rfLine) : null));
     const start = s.start || (D.cv && D.cv.start);
     const label = sessions ? `${plural(sessions, "session")}${start ? ` since ${dayShort(start)}` : ""}` : "No sessions yet";
-    /* Claude's own reading of the portfolio's risk, from its latest decision that gives one (from 18 Nov 2026), under the
-       measured figures: its words, marked as such */
-    const view = ((D.up && D.up.updates) || []).find((u) => u.portfolio_risk);
+    /* under the measured figures (17 Nov 2026): Claude's own reading of the portfolio's risk (its latest decision that
+       gives one, method 2, from 18 Nov 2026), marked as its words; until there is one, the portfolio's biggest bets
+       against the S&P 500 (cp_api sector_bets: the three sectors furthest from the index's weight, Claude's minus the
+       index's, in percentage points; no green or red, as an overweight is neither a gain nor a loss). One of the two, in
+       the page's flow: never a box that scrolls, and the row keeps its height. What Claude watches is in each decision */
+    const ups = (D.up && D.up.updates) || [];
+    const bets = (s.sector_bets || []).filter((x) => x && x.sector && ok(x.diff)).slice(0, 3);
+    const both = (x) => `Claude ${wp(x.weight)}, S&P 500 ${wp(x.sp500)}`;
+    const betList = bets.length ? h("section", { class: "cp-rx-s", "aria-labelledby": "cp-bets-t" },
+      h("h3", { class: "cp-k", id: "cp-bets-t", title: "Claude's weight in a sector minus the S&P 500's, in percentage points" },
+        "Biggest bets against the S&P 500"),
+      h("ul", { class: "cp-bets" }, bets.map((x) => h("li", { title: `${x.sector}: ${both(x)}` },
+        h("span", {}, x.sector), h("b", {}, ptsTxt(x.diff * 100, fmt.n1)), h("span", { class: "sr-only" }, `, ${both(x)}`))))) : null;
+    const view = ups.find((u) => u.portfolio_risk);
     const said = view ? h("figure", { class: "cp-quote cp-rq" }, h("blockquote", {}, `“${prose(view.portfolio_risk)}”`),
       h("figcaption", {}, `Claude on the portfolio's risk, ${wday((view.decided_at && berlinDate(view.decided_at)) || view.date)}`)) : null;
-    return panel("risk", { label, dot: toGo ? "wait" : "ok", title }, tbl, h("p", { class: "cp-caveat" }, caveat), said, how);
+    const more = said ? [said] : betList ? [betList] : [];
+    return panel("risk", { label, dot: toGo ? "wait" : "ok", title }, tbl, h("p", { class: "cp-caveat" }, caveat),
+      more.length ? h("div", { class: "cp-rx" }, h("div", { class: "cp-rx-in" }, more)) : null, how);
   }
 
   /* ---------------------------------------------------------------- Decisions (like a broker's order list) */
@@ -1064,9 +1079,10 @@
   /* [ISO date, the owner's words, verbatim] newest first */
   const METHOD_CHANGES = [
     ["2026-11-17", "17 Nov 2026: from the decision of 18 Nov, Claude's brief adds company results and valuations from SEC filings, " +
-      "the S&P 500's sector weights, each holding's thesis and its result since purchase, and Claude's own record. Claude also " +
-      "states, for each holding, what would make it sell, and names the candidates it looked at and passed on. The rules (v3) " +
-      "are unchanged."],
+      "the S&P 500's sector weights, each holding's thesis and its result since purchase, Claude's own record, and a group of " +
+      "candidates chosen on company figures (growing, profitable companies with high free cash flow for their price) besides " +
+      "those chosen on price trends. Claude also states, for each holding, what would make it sell, and names the candidates it " +
+      "looked at and passed on. The rules (v3) are unchanged."],
   ];
   function howBody(D) {
     const s = D.s || {}, lim = limitsOf(s);
