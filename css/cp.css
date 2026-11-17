@@ -17,12 +17,12 @@
    azure outline 3.3:1 on the panel, 3.4:1 on the page, 3.2:1 on the raised grey (3.9:1 for the selected segment's ring);
    the chart's line and the allocation bars 8.3:1 on the panel, 7.5:1 on their grey track and 5.9:1 against the cash part;
    the brand mark 8.8:1 under the glow; the cash-limit tick keeps a panel-coloured ring (8.3:1 against the azure bar,
-   the tick itself 11.5:1 on the cash part). The top bar's two quiet links are the secondary grey (7.4:1 on the page).
+   the tick itself 11.5:1 on the cash part). The top bar's three quiet links are the secondary grey (7.4:1 on the page).
    A link in running text is underlined as well (the azure outline colour, 3.3:1), as the azure against the grey text
    around it is only 1.2:1: colour is never a link's only cue.
    Layout: 12 columns from 1200px (tighter below 1440px, Holdings kept wide enough for its names), two from 768px, one
-   below (16px gutters). How it works and Verify are dialogs (the top bar's and the footer's links), not panels. All
-   motion is off under prefers-reduced-motion.
+   below (16px gutters). How it works, Verify and Track record are dialogs (the top bar's and the footer's links), not
+   panels. All motion is off under prefers-reduced-motion.
    Class prefix cp-. */
 
 /* ================================================================ tokens */
@@ -88,8 +88,8 @@ body[data-page="cp"] ::selection { background: rgba(108, 180, 255, 0.3); color: 
 body[data-page="cp"] :focus-visible { outline: 2px solid var(--cp-accent); outline-offset: 2px; }
 body[data-page="cp"] [tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
 /* a link in running text is underlined in the soft azure, so its colour is not its only cue (the azure against the grey
-   text around it is 1.2:1; WCAG 1.4.1); buttons, the top bar's two quiet links and the skip link opt out where they are
-   styled */
+   text around it is 1.2:1; WCAG 1.4.1); buttons, the top bar's three quiet links and the skip link opt out where they
+   are styled */
 body[data-page="cp"] a {
   color: var(--cp-link); text-decoration: underline; text-decoration-color: var(--cp-accent-line); text-underline-offset: 3px;
 }
@@ -108,8 +108,8 @@ body[data-page="cp"] .skip-link {
 body[data-page="cp"] .page { max-width: none; margin: 0; padding: 0; }
 body[data-page="cp"] .tip { background: var(--cp-raised); color: var(--cp-text); border-color: var(--cp-line-2); font-family: var(--cp-font); }
 
-/* ---------------------------------------------------------------- top bar: the mark, title and byline, the two links to
-   How it works and Verify (dialogs), the pills, the status */
+/* ---------------------------------------------------------------- top bar: the mark, title and byline, the three links
+   to How it works, Verify and Track record (dialogs), the pills, the status */
 body[data-page="cp"] header.top {
   position: relative; z-index: 50; height: auto; background: var(--cp-glow) fixed, var(--cp-bg); border-bottom: 1px solid var(--cp-line);
   box-shadow: none;
@@ -120,8 +120,8 @@ body[data-page="cp"] .top-inner {
 }
 .cp-brand { display: flex; align-items: center; gap: 12px; flex: 1 1 280px; min-width: 0; }
 .cp-mark { flex: none; width: 30px; height: 30px; color: var(--cp-accent); }
-/* the title with the two links beside it, the tagline under both (phones: the links under the tagline). index.html puts the
-   links before the tagline, so the keyboard reaches them in the order of the wider layouts (768px up) */
+/* the title with the three links beside it, the tagline under both (phones: the links under the tagline). index.html puts
+   the links before the tagline, so the keyboard reaches them in the order of the wider layouts (768px up) */
 .cp-brand-t {
   display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "title links" "tag tag"; align-items: baseline;
   column-gap: 14px; min-width: 0;
@@ -329,6 +329,10 @@ body[data-page="cp"] a.cp-btn { color: var(--cp-text); text-decoration: none; }
 .cp-ahead { padding-bottom: 16px; }
 .cp-ahead p { font-size: 12px; line-height: 1.35; color: var(--cp-text-2); }
 .cp-ahead p b { font-weight: 600; color: var(--cp-text); }
+/* the count opens Track record (17 Nov 2026): the line keeps its greys, its underline the soft azure of running-text
+   links (so colour is not its only cue); under the pointer the text turns white and the underline azure */
+body[data-page="cp"] .cp-ahead a { color: inherit; text-decoration-color: var(--cp-accent-line); }
+body[data-page="cp"] .cp-ahead a:hover { color: var(--cp-text); text-decoration-color: var(--cp-accent); }
 .cp-ahead-bar { display: flex; gap: 3px; height: 6px; margin-top: 8px; }
 .cp-ahead-bar i { flex: 1 1 0; min-width: 0; border-radius: 2px; background: var(--cp-pill); }
 .cp-ahead-bar i.on { background: var(--cp-accent); }
@@ -687,6 +691,45 @@ body[data-page="cp"] a.cp-tag:hover { background: var(--cp-accent-soft); }
 .cp-dl { display: flex; flex-wrap: wrap; gap: 6px; }
 .cp-dialog .cp-how { margin-top: 0; padding-top: 2px; border-top: 0; }
 
+/* Track record (17 Nov 2026): the counts in one line, the median, best and worst trades as three figures between two
+   hairlines (green and red only on their signed points), what Effect means, then every trade under its decision, newest
+   first, each decision's heading a link. On phones the fill price goes and the columns close up, so the table fits the
+   dialog down to 320px; anything wider would scroll in its own box, as a decision's table does, never the page */
+.cp-trk-sum { font-size: 14px; line-height: 1.5; color: var(--cp-text); }
+.cp-trk-sum b { font-weight: 600; }
+.cp-trk-k {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 11px 0 12px;
+  border-top: 1px solid var(--cp-line); border-bottom: 1px solid var(--cp-line);
+}
+.cp-trk-k dt { font: 500 12px / 1.3 var(--cp-font); color: var(--cp-text-2); }
+.cp-trk-k dd { margin: 3px 0 0; }
+.cp-trk-k dd b { display: block; font: 600 16px / 1.3 var(--cp-font); color: var(--cp-text); }
+.cp-trk-k dd b.up { color: var(--cp-up); }
+.cp-trk-k dd b.down { color: var(--cp-down); }
+.cp-trk-k dd span { display: block; margin-top: 1px; font-size: 12px; line-height: 1.35; color: var(--cp-text-2); }
+.cp-trk-x { font-size: 12.5px; line-height: 1.5; color: var(--cp-text-2); }
+/* its own box for a table wider than the dialog; 4px of room each side, so a focus ring at the edge is not cut */
+.cp-trk-w {
+  margin: 0 -4px; padding: 0 4px; overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: thin; scrollbar-color: var(--cp-pill) transparent;
+}
+.cp-trk { font-size: 13px; }
+.cp-trk th, .cp-trk td { padding: 5px 0 5px 14px; border-bottom: 1px solid var(--cp-line); vertical-align: baseline; white-space: nowrap; }
+.cp-trk th:first-child, .cp-trk td:first-child { padding-left: 0; }
+.cp-trk thead th { padding-top: 0; padding-bottom: 7px; font-size: 12px; font-weight: 500; color: var(--cp-text-2); }
+.cp-trk tbody th { font-weight: 600; color: var(--cp-text); }
+.cp-trk td { font-weight: 600; color: var(--cp-text); }
+.cp-trk td.d, .cp-trk td.sd, .cp-trk td.px { font-weight: 400; color: var(--cp-text-2); }
+.cp-trk td.up { color: var(--cp-up); }
+.cp-trk td.down { color: var(--cp-down); }
+.cp-trk td.cp-na { font-weight: 400; color: var(--cp-text-2); }
+.cp-trk small { font-size: 11px; font-weight: 400; color: var(--cp-text-2); }
+/* a decision's heading: the link, then its count of trades in grey */
+.cp-trk tr.g th { padding: 16px 0 6px; font-size: 12.5px; font-weight: 600; text-align: left; white-space: normal; }
+.cp-trk tbody:first-of-type tr.g th { padding-top: 10px; }
+.cp-trk tr.g th > span { font-weight: 400; color: var(--cp-text-2); }
+.cp-trk tbody tr:last-child > * { border-bottom: 0; }
+
 /* Rules v3: the numbered rules, then their fingerprint */
 .cp-rules { display: grid; gap: 0; counter-reset: rule; list-style: none; }
 .cp-rules li { position: relative; padding: 8px 0 8px 32px; border-bottom: 1px solid var(--cp-line); counter-increment: rule; }
@@ -766,7 +809,7 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
   .cp-h1 { font-size: 18px; }
   .cp-by { display: block; }
   .cp-by .cp-sep { display: none; }
-  /* the mark beside the title; the links to How it works and Verify on their own line under the tagline */
+  /* the mark beside the title; the links to How it works, Verify and Track record on their own line under the tagline */
   .cp-brand { align-items: flex-start; gap: 10px; }
   .cp-mark { width: 26px; height: 26px; margin-top: -2px; }
   .cp-brand-t { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "tag" "links"; }
@@ -822,9 +865,22 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
   .cp-dlg-h { padding: 12px 14px 12px 16px; }
   .cp-dlg-b { padding: 14px 16px 18px; }
   .cp-steps li { column-gap: 12px; }
+  /* Track record on a phone: the fill price goes (it is in the decision's own table), the columns close up and a head
+     may take two lines ("Price / since"), so the table fits a 320px screen */
+  .cp-trk { font-size: 12px; }
+  .cp-trk th, .cp-trk td { padding-left: 8px; }
+  .cp-trk thead th, .cp-trk thead th.num { white-space: normal; vertical-align: bottom; }
+  .cp-trk .px { display: none; }
+  .cp-trk-k { column-gap: 10px; }
+  .cp-trk-k dd b { font-size: 15px; }
 }
 @media (min-width: 360px) and (max-width: 767px) {
   .cp-drow .c-date { min-width: 8em; }
+}
+/* the narrowest phones (320-359px): Track record's table a size smaller, its columns closer, so Effect stays in view */
+@media (max-width: 359px) {
+  .cp-trk { font-size: 11px; }
+  .cp-trk th, .cp-trk td { padding-left: 6px; }
 }
 
 /* ================================================================ motion */

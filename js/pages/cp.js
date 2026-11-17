@@ -6,10 +6,11 @@
                                      the status pill
      row 1                           Portfolio · Performance (the chart) · Holdings
      row 2                           Risk vs S&P 500 ETF · Decisions · Allocation and Recent fills
-   How it works, Verify, Rules v3 and Legal open as dialogs, one at a time (#/cp?open=how, verify, rules, legal: the top
-   bar's two links, the footer's four, the disclaimer's Legal; the owner, 15 Nov 2026: How it works and Verify "must exist,
-   but not be visible directly"). #/cp is the only address: old links with ?tab=, ?sec= or ?open= open the page at its top
-   (core.js Router drops them on arrival; render() cleans what is left).
+   How it works, Verify, Track record, Rules v3 and Legal open as dialogs, one at a time (#/cp?open=how, verify, track,
+   rules, legal: the top bar's three links, the footer's five, the disclaimer's Legal, the Portfolio panel's count of
+   holdings ahead of the ETF; the owner, 15 Nov 2026: How it works and Verify "must exist, but not be visible directly").
+   #/cp is the only address: old links with ?tab=, ?sec= or ?open= open the page at its top (core.js Router drops them on
+   arrival; render() cleans what is left).
    Every number comes from /api/cp/summary, /holdings, /updates, /curve (or plain arithmetic on them); a missing datum
    shows a designed empty state, never a guess. Nodes are built with h() only (no innerHTML with API text). */
 (function () {
@@ -30,13 +31,15 @@
     "recommendation or solicitation to buy or sell any security. Past or simulated results do not predict future results. " +
     "Not affiliated with Anthropic; Claude is used as a tool. Prices: Lang & Schwarz indications, for personal use. " +
     "Member list: Wikipedia (CC BY-SA 4.0).";
-  /* the four dialogs a link can open. The same hrefs are written in index.html (the top bar's How it works and Verify, the
-     local footer) and in publish.py (LEGAL_HREF, RULES_HREF, HOW_HREF, VERIFY_HREF: the public band and footer) */
+  /* the five dialogs a link can open. The same hrefs are written in index.html (the top bar's How it works, Verify and
+     Track record, the local footer) and in publish.py (LEGAL_HREF, RULES_HREF, HOW_HREF, VERIFY_HREF, TRACK_HREF: the
+     public band and footer) */
   const LEGAL_HREF = "#/cp?open=legal";
   const RULES_HREF = "#/cp?open=rules";
   const HOW_HREF = "#/cp?open=how";
   const VERIFY_HREF = "#/cp?open=verify";
-  const DIALOGS = new Set(["legal", "rules", "how", "verify"]);
+  const TRACK_HREF = "#/cp?open=track";
+  const DIALOGS = new Set(["legal", "rules", "how", "verify", "track"]);
   const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
   const NARROW_CHART = 520;                      // below this plot width: smaller markers
   const DEC_SHOWN = 7;                           // decisions listed before "Show all" (all of them up to two more)
@@ -286,7 +289,8 @@
   /* ---------------------------------------------------------------- Portfolio */
   /* the holdings against the S&P 500 ETF, each since it was bought (cp_api since_bought, 17 Nov 2026): how many are
      ahead, then one segment per holding, largest first, azure when ahead and grey when not (a count, not a signed number:
-     no green or red). Nothing without those figures (an app not restarted since) */
+     no green or red). Nothing without those figures (an app not restarted since). The count is a link to Track record,
+     every trade against the ETF (17 Nov 2026) */
   function aheadStrip(D) {
     const rows = ((D.hd && D.hd.rows) || []).filter((r) => r.since_bought && ok(r.since_bought.return) && ok(r.since_bought.etf));
     if (rows.length < 2) return null;
@@ -295,7 +299,8 @@
     const fig = (r) => `${r.ticker} ${sp1(r.since_bought.return)}, ETF ${sp1(r.since_bought.etf)}`;
     return h("div", { class: "cp-ahead" },
       /* "holdings" goes where the panel is narrowest (1200-1439px), so the line stays one line there too */
-      h("p", {}, h("b", {}, `${n} of ${rows.length}`), h("span", { class: "lg" }, " holdings"), " ahead of the ETF since bought"),
+      h("p", {}, h("a", { href: TRACK_HREF, "aria-haspopup": "dialog", title: "Track record: every trade against the S&P 500 ETF" },
+        h("b", {}, `${n} of ${rows.length}`), h("span", { class: "lg" }, " holdings"), " ahead of the ETF since bought")),
       h("div", { class: "cp-ahead-bar", role: "img",
         "aria-label": `${n} of ${rows.length} holdings ahead of the S&P 500 ETF, each since it was bought. Ahead: ` +
           `${rows.filter(isAhead).map((r) => r.ticker).join(", ") || "none"}.` },
@@ -790,7 +795,9 @@
   /* each fill of a decision against the S&P 500 ETF over the same days (cp_api _scorecard, 17 Nov 2026): the price change
      from the fill to the latest price and the ETF's change over the same sessions, then the trade's effect in points:
      for a buy the share's change minus the ETF's, for a sale the ETF's change minus the share's (a share that did worse
-     after it was sold makes the sale positive), so green means the trade helped either way (17 Nov 2026) */
+     after it was sold makes the sale positive), so green means the trade helped either way (17 Nov 2026). Track record
+     uses the same effect */
+  const effectOf = (x) => (ok(x.change) && ok(x.etf) ? (x.side === "sell" ? x.etf - x.change : x.change - x.etf) * 100 : null);
   function scorecard(u) {
     const rows = (u.scorecard || []).filter((x) => x && x.ticker);
     if (!rows.length) return null;
@@ -801,7 +808,7 @@
     const sn = (x) => h("td", { class: `num ${ok(x) ? tone(x) : ""}`.trim() }, sp1(x));
     const body = rows.map((x) => {
       const sell = x.side === "sell";
-      const g = ok(x.change) && ok(x.etf) ? (sell ? x.etf - x.change : x.change - x.etf) * 100 : null;
+      const g = effectOf(x);
       return h("tr", {}, h("th", { scope: "row" }, x.ticker),
         h("td", { class: "f" }, `${sell ? "Sold" : "Bought"} ${x.date ? dayShort(x.date) : ""}`, h("span", { class: "px" }, ` at ${m$(x.price)}`)),
         ok(x.change) ? sn(x.change) : h("td", { class: "num cp-na", title: "No valuation after this fill yet" }, "—"),
@@ -908,6 +915,13 @@
     r.tr.scrollIntoView({ block: "start", behavior: still() ? "auto" : "smooth" });
     r.btn.focus({ preventScroll: true });
   }
+  /* the company names the page knows, by ticker: the holdings', then the first picks' */
+  function namesOf(D) {
+    const s = D.s || {}, names = {};
+    ((D.hd && D.hd.rows) || []).forEach((r) => { if (r.name) names[r.ticker] = r.name; });
+    ((s.pending && s.pending.targets) || []).forEach((r) => { if (r.name && !names[r.ticker]) names[r.ticker] = r.name; });
+    return names;
+  }
   function decPanel(D) {
     const ups = D.up ? D.up.updates || [] : null;
     const title = "Decisions";
@@ -920,9 +934,7 @@
     const s = D.s || {};
     const trades = ups.filter((u) => u.filled_on).length;
     const orders = ups.reduce((a, u) => a + (u.filled_on ? u.orders || 0 : 0), 0);
-    const names = {};
-    ((D.hd && D.hd.rows) || []).forEach((r) => { if (r.name) names[r.ticker] = r.name; });
-    ((s.pending && s.pending.targets) || []).forEach((r) => { if (r.name && !names[r.ticker]) names[r.ticker] = r.name; });
+    const names = namesOf(D);
     DEC = { rows: new Map(), all: null };
     const fold = ups.length > DEC_SHOWN + 2;      // a "Show all" for one or two rows would only cost a click
     const body = h("tbody", {});
@@ -1173,10 +1185,98 @@
     ];
   }
 
-  /* ---------------------------------------------------------------- dialogs: How it works, Verify, Rules v3, Legal.
-     One open at a time: a dialog opened from another (Rules from How it works) takes its place, and when the last one
-     closes (Esc, the ✕, a click on the backdrop) focus goes back to what opened the first */
-  const DLG = {};                                // the dialogs by name ("how", "verify", "rules", "legal")
+  /* ---------------------------------------------------------------- Track record (a dialog, 17 Nov 2026): Claude's whole
+     record of trades in one place, for a reader coming from the owner's CV. At the top how many trades helped against the
+     S&P 500 ETF and how many did not, their median effect, the best and the worst trade, and what the effect is; then
+     every trade under its decision, newest first, each decision's heading a link to it in the Decisions panel. Built
+     from the decisions' own scorecards (cp_api _scorecard): the same effect as in each decision's table (effectOf) */
+  function median(xs) {
+    const v = [...xs].sort((a, b) => a - b), m = Math.floor(v.length / 2);
+    return !v.length ? null : v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
+  }
+  /* a decision's heading: this dialog closes and that decision opens in the Decisions panel, in view, its row focused
+     (not what opened the dialog: dlgBack is let go first) */
+  function toDecision(date) {
+    dlgBack = null;
+    const d = openOne();
+    if (d) d.close();
+    openDecision(date);
+  }
+  function trackBody(D) {
+    const ups = D.up ? D.up.updates || [] : null;
+    if (!ups) return [failed(D.err.up)];
+    const groups = ups.map((u) => ({ u, rows: (u.scorecard || []).filter((x) => x && x.ticker) })).filter((g) => g.rows.length);
+    if (!groups.length) {
+      /* fills without their scorecard: an app not restarted since 17 Nov 2026 */
+      return [ups.some((u) => (u.fills || []).length) ? note("The track record is listed from the next update of this page.")
+        : note("No trades yet.", "Each trade is listed here from its fill, against the S&P 500 ETF over the same days.")];
+    }
+    const names = namesOf(D);
+    const all = groups.flatMap((g) => g.rows);
+    const meas = all.filter((x) => ok(effectOf(x)));
+    const up = meas.filter((x) => effectOf(x) > 0).length;
+    const wait = all.length - meas.length;
+    const first = all.map((x) => x.date).filter(Boolean).sort()[0];
+    const to = meas.map((x) => x.to).filter(Boolean).sort().pop();
+    /* "bought 19 Oct", the date whole where the line wraps (phones): a no-break space */
+    const what = (x) => `${x.side === "sell" ? "sold" : "bought"}${x.date ? ` ${dayShort(x.date).replace(" ", "\u00a0")}` : ""}`;
+    const sum = h("p", { class: "cp-trk-sum" }, h("b", {}, plural(all.length, "trade")), first ? ` since ${day(first)}` : "",
+      meas.length ? [": ", h("b", {}, `${up} helped`), " against the ETF, ", h("b", {}, `${meas.length - up} did not`)] : null,
+      wait ? `${meas.length ? "," : ":"} ${wait} not measured yet` : "", ".");
+    /* the median, the best and the worst: from two measured trades (one would be all three) */
+    let figs = null;
+    if (meas.length > 1) {
+      const by = [...meas].sort((a, b) => effectOf(b) - effectOf(a));
+      const best = by[0], worst = by[by.length - 1];
+      const kv = (k, g, sub) => h("div", {}, h("dt", {}, k),
+        h("dd", {}, h("b", { class: tone(g) || null }, ptsTxt(g, fmt.n1)), h("span", {}, sub)));
+      figs = h("dl", { class: "cp-trk-k" },
+        kv("Median effect", median(meas.map(effectOf)), `of ${plural(meas.length, "trade")}`),
+        kv("Best trade", effectOf(best), `${best.ticker}, ${what(best)}`),
+        kv("Worst trade", effectOf(worst), `${worst.ticker}, ${what(worst)}`));
+    }
+    const def = h("p", { class: "cp-trk-x" }, "Effect: what a trade gained against the ETF over the same days, in percentage " +
+      `points, from its fill to the last valuation${to ? ` (${dayShort(to)})` : ""}, before commissions; for a sale it is ` +
+      "turned around, so a share that did worse than the ETF after it was sold makes the sale positive. Each trade counts " +
+      "on its own here; the Portfolio panel counts the holdings, after commissions, so its figure can differ.");
+    const num = (x, f) => h("td", { class: `num${tone(x) ? ` ${tone(x)}` : ""}` }, f(x));
+    const na = (title) => h("td", { class: "num cp-na", title }, "—");
+    const row = (x) => {
+      const g = effectOf(x);
+      return h("tr", {}, h("td", { class: "d" }, x.date ? dayShort(x.date) : "—"),
+        h("th", { scope: "row", title: names[x.ticker] || null }, x.ticker),
+        h("td", { class: "sd" }, x.side === "sell" ? "Sold" : "Bought"),
+        h("td", { class: "num px" }, m$(x.price)),
+        ok(x.change) ? num(x.change, sp1) : na("No valuation after this fill yet"),
+        ok(x.change) ? num(x.etf, sp1) : na(null),
+        ok(g) ? h("td", { class: `num g${tone(g) ? ` ${tone(g)}` : ""}` }, ptsTxt(g, fmt.n1),
+          x.to && to && x.to !== to ? h("small", {}, ` to ${dayShort(x.to)}`) : null) : na(null));
+    };
+    const cols = [["Filled", "d"], ["Stock"], ["Side"], ["Fill price", "num px"], ["Price since", "num"], ["ETF", "num"],
+      ["Effect", "num", "What the trade gained against the ETF, in points"]];
+    const tbl = h("table", { class: "cp-trk" },
+      h("caption", { class: "sr-only" }, "Every trade, newest first, under its decision: the fill, the price change since, the " +
+        "S&P 500 ETF over the same days and the effect in points"),
+      h("thead", {}, h("tr", {}, cols.map(([t, cls, title]) => h("th", { scope: "col", class: cls || null, title: title || null }, t)))),
+      groups.map(({ u, rows }) => {
+        const when = wday((u.decided_at && berlinDate(u.decided_at)) || u.date);
+        return h("tbody", {}, h("tr", { class: "g" }, h("th", { colspan: cols.length, scope: "rowgroup" },
+          h("button", { class: "cp-link", type: "button", title: "Close this and open the decision in the Decisions panel",
+            onclick: () => toDecision(u.date) }, `Decision of ${when}`, h("span", { class: "sr-only" }, ", open it in the Decisions panel")),
+          h("span", {}, ` · ${plural(rows.length, "trade")}`))),
+        [...rows].sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))).map(row));
+      }));
+    return [
+      h("p", { class: "cp-dlg-lead" }, "Every stock Claude bought or sold, each against the S&P 500 exchange-traded fund (ETF) " +
+        "over the same days."),
+      sum, figs, def, h("div", { class: "cp-trk-w" }, tbl),
+    ];
+  }
+
+  /* ---------------------------------------------------------------- dialogs: How it works, Verify, Track record, Rules v3,
+     Legal. One open at a time: a dialog opened from another (Rules from How it works) takes its place, and when the last
+     one closes (Esc, the ✕, a click on the backdrop) focus goes back to what opened the first */
+  const DLG = {};                                // the dialogs by name ("how", "verify", "track", "rules", "legal")
   let dlgBack = null;                            // what had focus when the first dialog opened: it gets it back at the end
   const openOne = () => Object.values(DLG).find((x) => x.open) || null;
   function makeDialog(id, title, body) {
@@ -1230,6 +1330,7 @@
     const ss = s || {};
     DLG.how = makeDialog("how", "How it works", howBody(D));
     DLG.verify = makeDialog("verify", "Verify", verifyBody(D));
+    DLG.track = makeDialog("track", "Track record", trackBody(D));
     DLG.rules = makeDialog("rules", `Rules v${ss.rules_version || 3}`, rules);
     DLG.legal = makeDialog("legal", "Legal and sources", [
       h("p", {}, h("strong", {}, "Paper money · educational · not investment advice")),
@@ -1261,9 +1362,10 @@
   }
 
   /* ---------------------------------------------------------------- the page
-     A link to #/cp in the page (the top bar's How it works and Verify, the footer's four links, the disclaimer's "Legal",
-     the Rules button in How it works) is handled here, without loading anything: ?open=how, verify, rules and legal open
-     their dialog, anything else goes to the top. The address stays #/cp (replaceState: one page, no history entries). */
+     A link to #/cp in the page (the top bar's How it works, Verify and Track record, the footer's five links, the
+     disclaimer's "Legal", the Rules button in How it works, the Portfolio panel's count of holdings ahead of the ETF) is
+     handled here, without loading anything: ?open=how, verify, track, rules and legal open their dialog, anything else
+     goes to the top. The address stays #/cp (replaceState: one page, no history entries). */
   /* the one-line disclaimer above the panels. The public page has its own band (#pub-disclaimer, written by publish.py);
      the local app gets the same markup here */
   const band = () => ($("pub-disclaimer") ? null : h("div", { class: "pub-disclaimer", role: "note", "aria-label": "Disclaimer" },
