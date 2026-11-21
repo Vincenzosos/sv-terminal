@@ -6,6 +6,82 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0b0c0e">
+<script>
+/* The brand loader (21 Nov 2026, the owner: "a loading before it opens, then an opening with an effect"): the first load
+   in a tab only, never for a deep link (#/...?...) and never under reduced motion. While html[data-loader] is set the
+   pages hold their own openings until "sv:loader-done" (cp.js entrance(), news.js entrance()). */
+try {
+  if (!sessionStorage.getItem("sv-loader") && location.hash.indexOf("?") < 0 && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.documentElement.setAttribute("data-loader", "on");
+    document.documentElement.classList.add("svld-on");
+  }
+} catch (e) {}
+</script>
+<style>
+/* The loader: the night of Markets Briefing, the SV mark drawing itself (the frame, then the S, then the V), lighting up in
+   the SV azure, the name and a hairline of progress. Its lift: the mark flies through and the night opens from the middle
+   as an iris, with a faint azure edge; the page's own opening plays through it. Without the script it leaves by itself
+   after 5s. Colours: the news ink rgb(4, 7, 16), the SV azure rgb(108, 180, 255). */
+@property --svld-r { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+#sv-loader { display: none; }
+html.svld-on #sv-loader {
+  display: block; position: fixed; inset: 0; z-index: 2147483000; overflow: hidden; touch-action: none;
+  overscroll-behavior: contain; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+  animation: svld-safety 400ms ease 5s forwards;
+}
+.svld-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(46% 40% at 50% 50%, rgba(56, 104, 226, 0.15), rgba(56, 104, 226, 0) 100%), rgb(4, 7, 16);
+}
+.svld-ring { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.svld-c {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.svld-mark {
+  display: block; width: 72px; height: 72px; overflow: visible; color: rgb(232, 238, 255);
+  filter: drop-shadow(0 0 12px rgba(108, 180, 255, 0.28)); animation: svld-lit 600ms ease-out 980ms forwards;
+}
+.svld-mark path { fill: none; stroke-dasharray: var(--l) var(--l); stroke-dashoffset: var(--l); animation: svld-draw var(--d) cubic-bezier(0.65, 0, 0.35, 1) var(--w) forwards; }
+.svld-p1 { --l: 70; --d: 660ms; --w: 60ms; }
+.svld-p2 { --l: 25.5; --d: 430ms; --w: 440ms; }
+.svld-p3 { --l: 19.6; --d: 360ms; --w: 660ms; }
+.svld-name {
+  margin: 24px 0 0; white-space: nowrap; font: 600 12px/1 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.42em; text-indent: 0.42em; text-transform: uppercase; color: rgba(214, 224, 255, 0.8);
+  opacity: 0; animation: svld-name 760ms cubic-bezier(0.2, 0.7, 0.2, 1) 540ms forwards;
+}
+.svld-bar {
+  position: relative; display: block; width: 136px; height: 1px; margin-top: 20px; overflow: hidden;
+  background: rgba(255, 255, 255, 0.1); opacity: 0; animation: svld-in 400ms ease 300ms forwards;
+}
+.svld-bar i {
+  position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(0);
+  background: linear-gradient(90deg, rgba(108, 180, 255, 0.25), rgb(108, 180, 255)); transition: transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+#sv-loader.is-out { pointer-events: none; animation: none; }
+#sv-loader.is-out .svld-bar i { transition-duration: 200ms; }
+#sv-loader.is-out .svld-c { animation: svld-fly 560ms cubic-bezier(0.4, 0, 0.2, 1) 90ms both; }
+#sv-loader.is-out .svld-bg {
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) var(--svld-r), rgb(0, 0, 0) calc(var(--svld-r) + 9%));
+  mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) var(--svld-r), rgb(0, 0, 0) calc(var(--svld-r) + 9%));
+  animation: svld-iris 900ms cubic-bezier(0.6, 0, 0.2, 1) 140ms both;
+}
+#sv-loader.is-out .svld-ring {
+  background: radial-gradient(circle at 50% 50%, rgba(108, 180, 255, 0) calc(var(--svld-r) - 5%), rgba(108, 180, 255, 0.2) calc(var(--svld-r) + 3%), rgba(108, 180, 255, 0) calc(var(--svld-r) + 10%));
+  animation: svld-ring 900ms cubic-bezier(0.6, 0, 0.2, 1) 140ms both;
+}
+@keyframes svld-draw { to { stroke-dashoffset: 0; } }
+@keyframes svld-lit { to { color: rgb(108, 180, 255); filter: drop-shadow(0 0 18px rgba(108, 180, 255, 0.55)); } }
+@keyframes svld-name { from { opacity: 0; letter-spacing: 0.9em; text-indent: 0.9em; } to { opacity: 1; letter-spacing: 0.42em; text-indent: 0.42em; } }
+@keyframes svld-in { to { opacity: 1; } }
+@keyframes svld-fly { 45% { opacity: 0.3; } to { opacity: 0; transform: translate(-50%, -50%) scale(1.45); filter: blur(4px); } }
+@keyframes svld-iris { from { --svld-r: -10%; } 78% { opacity: 1; } to { --svld-r: 101%; opacity: 0; } }
+@keyframes svld-ring { from { --svld-r: -10%; opacity: 1; } 70% { opacity: 0.85; } to { --svld-r: 101%; opacity: 0; } }
+@keyframes svld-safety { to { opacity: 0; visibility: hidden; } }
+@media (max-width: 699px) { .svld-mark { width: 60px; height: 60px; } .svld-name { margin-top: 20px; } }
+@media (prefers-reduced-motion: reduce) { html.svld-on #sv-loader { display: none; } }
+</style>
 <title>Claude Portfolio · by Vincenzo Silvestri</title>
 <meta name="description" content="Claude Portfolio · by Vincenzo Silvestri: a public paper portfolio of US shares that Claude manages twice a week. Not investment advice.">
 <meta property="og:type" content="website">
@@ -18,19 +94,64 @@
 <meta property="og:image:height" content="627">
 <meta property="og:image:alt" content="Claude Portfolio: US stocks picked by Claude twice a week, measured against the S&amp;P 500. Paper money.">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="icon.svg?v=20261121125721" type="image/svg+xml">
+<link rel="icon" href="icon.svg?v=20261121193422" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=20261121125721">
-<link rel="stylesheet" href="css/static.css?v=20261121125721">
-<link rel="stylesheet" href="css/cp.css?v=20261121125721">
-<!-- site-pages --><link rel="stylesheet" href="css/site.css?v=20261121125721"><!-- /site-pages -->
+<link rel="stylesheet" href="app.css?v=20261121193422">
+<link rel="stylesheet" href="css/static.css?v=20261121193422">
+<link rel="stylesheet" href="css/cp.css?v=20261121193422">
+<!-- site-pages --><link rel="stylesheet" href="css/site.css?v=20261121193422"><!-- /site-pages -->
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js" integrity="sha384-stKllnUqA9AD0gsKCuUtf5XlqAW7PwIgDagoNsTWkjkBmJ/GZ/uHTgEBxdLV2VSK" crossorigin="anonymous" defer></script>
 <meta name="author" content="Vincenzo Silvestri">
 <link rel="author" href="https://www.linkedin.com/in/vincenzopiosilvestri">
 </head>
 <body data-ws="paper" data-page="cp">
+<div id="sv-loader" aria-hidden="true">
+  <div class="svld-bg"></div>
+  <div class="svld-ring"></div>
+  <div class="svld-c">
+    <svg class="svld-mark" viewBox="2.4 2.4 19.2 19.2" width="72" height="72" fill="none" stroke="currentColor" focusable="false"><path class="svld-p1" d="M4.5 3.2H19.5A1.3 1.3 0 0 1 20.8 4.5V19.5A1.3 1.3 0 0 1 19.5 20.8H4.5A1.3 1.3 0 0 1 3.2 19.5V4.5A1.3 1.3 0 0 1 4.5 3.2Z" stroke-width="1.3"/><path class="svld-p2" d="M10.6 9.2V7.4H6.6v4.6h4v4.6h-4v-1.8" stroke-width="1.55"/><path class="svld-p3" d="M12.9 7.4l2.55 9.2 2.55-9.2" stroke-width="1.55" stroke-linejoin="bevel"/></svg>
+    <p class="svld-name">SV Terminal</p>
+    <span class="svld-bar"><i></i></span>
+  </div>
+</div>
+<script>
+/* The loader's timing: at least 1.3s (the mark draws itself), at most 2.3s; sooner on a click, a tap, a key or the wheel.
+   Ready: a page's "sv:ready" (its first data on screen), else 0.7s after the window's load. The pages' openings start as
+   the night opens ("sv:loader-done"). Once a tab session (sessionStorage). */
+(function () {
+  var d = document.documentElement, el = document.getElementById("sv-loader");
+  if (!el) return;
+  if (!d.classList.contains("svld-on")) { el.remove(); return; }
+  var t0 = Date.now(), MIN = 1300, MAX = 2300, done = false, ready = false, bar = el.querySelector(".svld-bar i");
+  function prog(p) { if (bar && !done) bar.style.transform = "scaleX(" + p + ")"; }
+  function lift() {
+    if (done) return;
+    prog(1);
+    done = true;
+    window.removeEventListener("keydown", lift);
+    try { sessionStorage.setItem("sv-loader", "1"); } catch (e) {}
+    el.classList.add("is-out");
+    setTimeout(function () {
+      d.removeAttribute("data-loader");
+      window.dispatchEvent(new Event("sv:loader-done"));
+    }, 180);
+    setTimeout(function () { d.classList.remove("svld-on"); el.remove(); }, 1200);
+  }
+  function check() { if (ready && Date.now() - t0 >= MIN) lift(); }
+  function isReady() { if (!ready) { prog(0.96); ready = true; check(); } }
+  prog(0.16);
+  document.addEventListener("DOMContentLoaded", function () { prog(0.48); });
+  window.addEventListener("load", function () { prog(0.8); setTimeout(isReady, 700); });
+  window.addEventListener("sv:ready", function () { setTimeout(isReady, 60); });
+  setTimeout(check, MIN);
+  setTimeout(lift, MAX);
+  el.addEventListener("pointerdown", lift);
+  el.addEventListener("wheel", function (e) { e.preventDefault(); e.stopPropagation(); lift(); }, { passive: false });
+  window.addEventListener("keydown", lift);
+})();
+</script>
 <a class="skip-link" id="skip-link" href="#/">Skip to content</a>
 <!-- site-pages -->
 <nav class="site-bar" id="site-bar" aria-label="Site">
@@ -47,7 +168,7 @@
       <div class="cp-brand-t">
         <h1 class="cp-h1">Claude Portfolio</h1>
         <nav class="cp-links" aria-label="About the portfolio"><a href="#/cp?open=how" aria-haspopup="dialog">How it works</a><a href="#/cp?open=verify" aria-haspopup="dialog">Verify</a><a href="#/cp?open=track" aria-haspopup="dialog">Track record</a></nav>
-        <p class="cp-tagline"><span>Can Claude beat the S&amp;P 500?</span><span class="cp-sep" aria-hidden="true"> · </span><span class="nw">paper money</span><span class="cp-by" id="cp-by"></span></p>
+        <p class="cp-tagline"><span class="cp-q">Can Claude beat the S&amp;P 500?</span><span class="cp-sep" aria-hidden="true"> · </span><span class="nw">paper money</span><span class="cp-by" id="cp-by"></span></p>
       </div>
     </div>
     <nav class="tabs" id="tabs" aria-label="Pages" hidden>
@@ -90,12 +211,12 @@
 <div class="tip" id="tip" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="js/static.js?v=20261121125721" defer></script>
-<script src="js/core.js?v=20261121125721" defer></script>
-<script src="js/charts.js?v=20261121125721" defer></script>
-<script src="js/pages/cp.js?v=20261121125721" defer></script>
-<!-- site-pages --><script src="js/pages/news.js?v=20261121125721" defer></script><!-- /site-pages -->
-<script src="js/lock.js?v=20261121125721" defer></script>
-<script src="js/main.js?v=20261121125721" defer></script>
+<script src="js/static.js?v=20261121193422" defer></script>
+<script src="js/core.js?v=20261121193422" defer></script>
+<script src="js/charts.js?v=20261121193422" defer></script>
+<script src="js/pages/cp.js?v=20261121193422" defer></script>
+<!-- site-pages --><script src="js/pages/news.js?v=20261121193422" defer></script><!-- /site-pages -->
+<script src="js/lock.js?v=20261121193422" defer></script>
+<script src="js/main.js?v=20261121193422" defer></script>
 </body>
 </html>

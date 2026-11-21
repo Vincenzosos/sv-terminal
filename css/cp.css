@@ -1,28 +1,36 @@
 /* Claude Portfolio (#/cp): the one-page dashboard's design layer (15 Nov 2026; it replaces the warm skin of 27 Oct, which
-   looked like a copy of Claude). A dark trading screen: a near-black page, graphite panels with a hairline border and
-   16px corners side by side in a 12-column grid, one sans (Inter, tabular figures everywhere), monospace only for
-   fingerprints. Green and red only for signed numbers, gains and losses, "Traded" and status dots.
+   looked like a copy of Claude). A dark trading screen: a near-black page, graphite panels with a hairline border,
+   one sans (Inter, tabular figures everywhere), monospace only for fingerprints. Green and red only for signed numbers,
+   gains and losses, and the gap between Claude and the ETF (21 Nov 2026: "Traded" is a word, so it is white).
    One accent, sparingly (15 Nov 2026, the owner: "a few sprinkles of another colour"): the SV azure of the favicon
-   (icon.svg), never on a signed number. It marks the brand mark, a faint glow at the top of the page, Claude's line on the
-   chart (its area, its fill markers and every swatch that names it), the selected segment, the allocation bars, the change
-   chips and the quote's rule, links, focus rings, the main buttons and the steps of How it works; everything else stays
-   black and graphite. Not orange (Claude's own colour), not violet (rejected), not teal (too close to the gain green).
+   (icon.svg), never on a signed number. It marks the brand mark, Claude's line on the chart (its glow, its fill markers
+   and every swatch that names it), the selected segment, the allocation bars, the change chips and the quote's rule,
+   links, focus rings, the main buttons, the status dot and the steps of How it works; everything else stays black and
+   graphite. Not orange (Claude's own colour), not violet (rejected), not teal (too close to the gain green).
+   21 Nov 2026, "The Duel" (the owner: "exceptional and clean, no extra stuff"; "if a recruiter opens it, they must be
+   struck"): the page answers its own question in one look. The race is the hero, on the night sky of Markets Briefing
+   (the same blues, no stars): the question, the two figures face to face with the gap between them, and the chart
+   across the page, drawing itself on arrival. The key-number pills, the boxed disclaimer and the Portfolio panel's
+   cells went (the scoreboard says it larger, the other panels say the rest). Every other part sits below as a section
+   of one open page, never a box: a hairline across its columns, its title and caption on one line (the factsheet's
+   way), Holdings and Decisions on the left, Risk, Allocation and Recent fills on the right; one column on phones, the
+   same order, the same hero. Claude's own words always wear the azure rule at their left. Kept from the night skin's
+   review the same day: actions as words over a rule (no pills), dialogs headed by an eyebrow as Markets Briefing's
+   sheets, Claude's words as plain pull quotes.
    Dark only: there is no light theme.
    Loaded last (after app.css and, on the public site, static.css), so it wins over the legacy terminal styles.
    Tokens only: every colour is a --cp-* token of the block below, written as rgb() (no hex in page CSS, tests.test_shell).
    Contrast (WCAG, on the panel colour): text 16.3:1, secondary grey 6.9:1, green 9.1:1, red 5.5:1 (5.0:1 on the raised
-   grey); the muted grey (3.6:1) is used only for marks, separators and icons, never for text a reader needs.
+   grey); the muted grey (3.6:1) is used only for marks, separators and icons, never for text a reader needs. On the
+   sky (about rgb(8, 12, 27)): text 16.8:1, secondary grey 7.2:1, red 5.6:1, green 9.4:1, azure 8.6:1.
    Azure: links, focus rings and azure text 8.3:1 on the panel (8.9:1 on the page, 7.5:1 on the raised grey of the
    quote); azure text on its tint 6.5:1 (chips, step numbers) and 7.2:1 (the selected segment, on the page colour); the
-   azure outline 3.3:1 on the panel, 3.4:1 on the page, 3.2:1 on the raised grey (3.9:1 for the selected segment's ring);
-   the chart's line and the allocation bars 8.3:1 on the panel, 7.5:1 on their grey track and 5.9:1 against the cash part;
-   the brand mark 8.8:1 under the glow; the cash-limit tick keeps a panel-coloured ring (8.3:1 against the azure bar,
-   the tick itself 11.5:1 on the cash part). The top bar's three quiet links are the secondary grey (7.4:1 on the page).
-   A link in running text is underlined as well (the azure outline colour, 3.3:1), as the azure against the grey text
-   around it is only 1.2:1: colour is never a link's only cue.
-   Layout: 12 columns from 1200px (tighter below 1440px, Holdings kept wide enough for its names), two from 768px, one
-   below (16px gutters). How it works, Verify and Track record are dialogs (the top bar's and the footer's links), not
-   panels. All motion is off under prefers-reduced-motion.
+   azure outline 3.3:1 on the panel, 3.4:1 on the page. A link in running text is underlined as well (the azure outline
+   colour, 3.3:1), as the azure against the grey text around it is only 1.2:1: colour is never a link's only cue.
+   Layout: the hero across the page at every width; under it 12 columns from 1200px (Holdings and Decisions 7, the right
+   column 5), one column below 1200px for the hero and two for the sections from 768px, one below. How it works, Verify,
+   Track record, Rules v3 and Legal are dialogs (bottom sheets on phones). All motion is off under
+   prefers-reduced-motion.
    Class prefix cp-. */
 
 /* ================================================================ tokens */
@@ -34,51 +42,74 @@
   --cp-pill: rgb(48, 50, 58);
   --cp-line: rgba(255, 255, 255, 0.06);
   --cp-line-2: rgba(255, 255, 255, 0.11);
+  --cp-rule: rgba(255, 255, 255, 0.16);             /* a section's hairline, across its columns */
   --cp-text: rgb(242, 243, 245);
   --cp-text-2: rgb(154, 160, 166);
   --cp-text-3: rgb(107, 112, 118);
+  --cp-deck: rgb(214, 218, 226);                    /* Claude's words (Markets Briefing's deck grey) */
+  --cp-ix: rgba(214, 218, 226, 0.5);                /* the S&P 500's thin bars in Allocation */
   --cp-up: rgb(47, 209, 122);
   --cp-down: rgb(255, 77, 79);
   --cp-accent: rgb(108, 180, 255);                  /* the SV azure (icon.svg) */
   --cp-accent-soft: rgba(108, 180, 255, 0.14);      /* its tint: chips, the selected segment, step numbers, hovers */
   --cp-accent-line: rgba(108, 180, 255, 0.55);      /* its outline: 3:1 or more on the panel and the page */
-  --cp-glow: radial-gradient(ellipse 80% 520px at 50% -90px, rgba(108, 180, 255, 0.09), rgba(108, 180, 255, 0) 75%);
   --cp-link: var(--cp-accent);
   --cp-series-claude: var(--cp-accent);
   --cp-series-etf: rgb(154, 160, 166);
-  --cp-area-top: rgba(108, 180, 255, 0.24);
-  --cp-area-bot: rgba(108, 180, 255, 0);
-  --cp-grid: rgba(255, 255, 255, 0.05);
+  --cp-grid: rgba(255, 255, 255, 0.055);
   --cp-scrim: rgba(4, 5, 7, 0.74);
   --cp-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   --cp-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --cp-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  --cp-r: 16px; --cp-r2: 12px; --cp-r3: 8px;
-  --cp-gap: 14px; --cp-pad: 18px; --cp-gutter: 24px; --cp-max: 1680px; --cp-top: 66px;
-  --cp-stick: 0px;                 /* the part of the top bar that stays on screen while scrolling (from 1200px) */
-  --cp-plot: 292px;
-  --cp-dur: 160ms; --cp-ease: cubic-bezier(.2, .7, .2, 1);
+  --cp-r: 20px; --cp-r2: 12px; --cp-r3: 8px;
+  /* the gutter at the page's edges; the gap between the 12 columns; the room between two sections, one above the other */
+  --cp-gap: 48px; --cp-gutter: 40px; --cp-row: 64px; --cp-max: 1520px;
+  --cp-dur: 160ms; --cp-ease: cubic-bezier(.2, .7, .2, 1); --cp-ease-out: cubic-bezier(.16, .84, .24, 1);
+  /* 21 Nov 2026, The Duel: the night sky of Markets Briefing behind the hero. Under the site bar a glow of azure and
+     violet, the sky's two blues down the hero, then the page's near-black. No stars (a dot beside a line of text reads
+     as a stray mark, and the room of Markets Briefing has none) */
+  --cp-sky-ink: rgb(9, 13, 28);                     /* the rings of the chart's markers on the sky */
+  --cp-sky:
+    radial-gradient(56% 380px at 50% -90px, rgba(108, 180, 255, 0.30), rgba(108, 180, 255, 0) 100%),
+    radial-gradient(34% 280px at 14% -60px, rgba(126, 112, 255, 0.16), rgba(126, 112, 255, 0) 100%),
+    radial-gradient(34% 300px at 88% -60px, rgba(72, 150, 255, 0.15), rgba(72, 150, 255, 0) 100%),
+    linear-gradient(180deg, rgb(6, 9, 20) 0, rgb(8, 12, 28) 38%, rgb(9, 12, 24) 74%, rgb(11, 12, 14) 100%);
+  --cp-band-up: rgba(47, 209, 122, 0.16);           /* the gap on the chart where Claude is ahead */
+  --cp-band-down: rgba(255, 77, 79, 0.17);          /* and where it is behind */
+  --cp-glow-line: rgba(108, 180, 255, 0.5);         /* the glow under Claude's line */
+  --cp-sheet: rgb(14, 18, 28);                      /* the dialogs, as Markets Briefing's sheets */
+  --cp-sheet-line: rgba(255, 255, 255, 0.10);
+  --cp-sheet-shadow: 0 40px 120px rgba(0, 0, 0, 0.6);
+  --cp-backdrop: rgba(4, 6, 12, 0.66);
+  --cp-tile: rgb(244, 245, 247);                    /* the plate behind a logo */
+  --cp-tile-wait: rgb(30, 35, 48);                  /* before the logo loads; the monogram's ground */
+  /* the hero's sizes: the question, the scoreboard's figures, the chart (as tall as the first screen leaves it) */
+  --cp-q: 52px; --cp-duel: 84px; --cp-plot: clamp(280px, calc(100vh - 548px), 480px);
 }
 @media (max-width: 1439px) {
-  :root { --cp-gap: 12px; --cp-pad: 16px; --cp-gutter: 20px; --cp-plot: 252px; --cp-top: 62px; }
+  :root { --cp-gap: 40px; --cp-gutter: 32px; --cp-row: 56px; --cp-q: 46px; --cp-duel: 72px; --cp-plot: clamp(240px, calc(100vh - 520px), 440px); }
 }
-/* the narrowest desktops: 9px gaps and 16px gutters give back the room a wider Holdings takes (the grid, 1200–1439px),
-   enough for the Performance header and the decisions table on one line each even beside a 17px classic scroll bar */
+/* the narrowest desktops: the hero a step smaller again, so it still fits a 1200 x 800 screen */
 @media (min-width: 1200px) and (max-width: 1279px) {
-  :root { --cp-gap: 9px; --cp-gutter: 16px; }
+  :root { --cp-gap: 32px; --cp-gutter: 28px; }
+}
+/* tablets: the chart as tall as the screen leaves it, at most 340px, so its dates and switches are in view on a 1024 x 768
+   screen too */
+@media (max-width: 1199px) {
+  :root { --cp-gap: 40px; --cp-gutter: 32px; --cp-q: 42px; --cp-duel: 64px; --cp-plot: clamp(240px, calc(100vh - 530px), 340px); }
 }
 @media (max-width: 767px) {
-  :root { --cp-gap: 12px; --cp-pad: 14px; --cp-gutter: 16px; --cp-plot: 240px; }
+  /* the scoreboard's figures scale with the screen: two of them face to face on any phone, 320px included */
+  :root { --cp-gap: 0px; --cp-gutter: 20px; --cp-row: 48px; --cp-q: 31px; --cp-duel: clamp(34px, 10.8vw, 44px); --cp-plot: 250px; }
 }
 
 /* ================================================================ shell */
 /* the scrollbar's room is kept while a dialog stops the page from scrolling, so nothing shifts sideways */
 html:has(body[data-page="cp"]) { background: var(--cp-bg); scrollbar-gutter: stable; }
-/* the faint azure glow at the top: fixed to the window, and drawn again in the top bar (which is opaque, as it stays on
-   screen from 1200px), so the two meet without a seam; it reads as depth, the panels stay graphite */
+/* the sky is the page's own background at its top (it scrolls away with the hero) */
 body[data-page="cp"] {
-  margin: 0; min-height: 100vh; padding-bottom: 0; overflow-x: hidden;
-  background: var(--cp-glow) fixed, var(--cp-bg); color: var(--cp-text);
+  position: relative; margin: 0; min-height: 100vh; padding-bottom: 0; overflow-x: hidden;
+  background: var(--cp-sky) top center / 100% 1060px no-repeat, var(--cp-bg); color: var(--cp-text);
   font: 400 14px / 1.5 var(--cp-font); font-feature-settings: "tnum" 1; font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
@@ -108,94 +139,119 @@ body[data-page="cp"] .skip-link {
 body[data-page="cp"] .page { max-width: none; margin: 0; padding: 0; }
 body[data-page="cp"] .tip { background: var(--cp-raised); color: var(--cp-text); border-color: var(--cp-line-2); font-family: var(--cp-font); }
 
-/* ---------------------------------------------------------------- top bar: the mark, title and byline, the three links
-   to How it works, Verify and Track record (dialogs), the pills, the status */
-body[data-page="cp"] header.top {
-  position: relative; z-index: 50; height: auto; background: var(--cp-glow) fixed, var(--cp-bg); border-bottom: 1px solid var(--cp-line);
-  box-shadow: none;
-}
+/* ---------------------------------------------------------------- top bar (21 Nov 2026): one quiet row, the mark, the
+   title and the three links to How it works, Verify and Track record (dialogs) at the left, the status at the right;
+   then the question, large and centred over the scoreboard, and the byline under it. index.html keeps its markup: the
+   brand's wrappers step aside (display: contents) so their parts sit on the row's grid */
+body[data-page="cp"] header.top { position: relative; z-index: 50; height: auto; background: none; border-bottom: 0; box-shadow: none; }
 body[data-page="cp"] .top-inner {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 24px; height: auto; min-height: var(--cp-top);
-  grid-template: none; background: transparent; width: 100%; max-width: var(--cp-max); margin: 0 auto; padding: 10px var(--cp-gutter);
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-rows: none;
+  grid-template-areas: "mark title links right" "q q q q"; align-items: center; column-gap: 14px; height: auto; min-height: 0;
+  width: 100%; max-width: var(--cp-max); margin: 0 auto; padding: 18px var(--cp-gutter) 0; background: transparent;
 }
-.cp-brand { display: flex; align-items: center; gap: 12px; flex: 1 1 280px; min-width: 0; }
-.cp-mark { flex: none; width: 30px; height: 30px; color: var(--cp-accent); }
-/* the title with the three links beside it, the tagline under both (phones: the links under the tagline). index.html puts
-   the links before the tagline, so the keyboard reaches them in the order of the wider layouts (768px up) */
-.cp-brand-t {
-  display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "title links" "tag tag"; align-items: baseline;
-  column-gap: 14px; min-width: 0;
-}
-.cp-h1 { grid-area: title; margin: 0; font: 700 19px / 1.2 var(--cp-font); letter-spacing: -0.01em; color: var(--cp-text); }
-.cp-tagline { grid-area: tag; margin: 2px 0 0; font: 400 13px / 1.4 var(--cp-font); color: var(--cp-text-2); }
-.cp-by { white-space: nowrap; }
-.cp-by:empty { display: none; }
-.cp-links { grid-area: links; display: flex; flex-wrap: wrap; gap: 2px 16px; padding-left: 14px; border-left: 1px solid var(--cp-line-2); }
+.cp-brand, .cp-brand-t { display: contents; }
+.cp-mark { grid-area: mark; flex: none; width: 28px; height: 28px; color: var(--cp-accent); }
+.cp-h1 { grid-area: title; margin: 0; font: 600 18px / 1.2 var(--cp-font); letter-spacing: -0.012em; color: var(--cp-text); white-space: nowrap; }
+.cp-links { grid-area: links; display: flex; flex-wrap: wrap; gap: 2px 20px; margin-left: 4px; padding-left: 18px; border-left: 1px solid var(--cp-line-2); }
 body[data-page="cp"] .cp-links a {
-  font: 500 13px / 1.4 var(--cp-font); color: var(--cp-text-2); text-decoration: none; white-space: nowrap; transition: color var(--cp-dur);
+  font: 500 14px / 1.4 var(--cp-font); color: var(--cp-text-2); text-decoration: none; white-space: nowrap; transition: color var(--cp-dur);
 }
 body[data-page="cp"] .cp-links a:hover { color: var(--cp-text); text-decoration: underline; text-decoration-color: var(--cp-accent); }
 body[data-page="cp"] .top-right {
-  display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; padding: 0; flex: 0 1 auto;
+  grid-area: right; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; padding: 0;
 }
-.cp-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-.cp-pill, .cp-status {
-  display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 1px solid var(--cp-line);
-  border-radius: 999px; background: var(--cp-panel); font: 500 13px / 1 var(--cp-font); color: var(--cp-text); white-space: nowrap;
+/* the question: the page's title on screen (the h1 names the site), and the byline under it. "paper money" is said by
+   the line under them (the disclaimer), so it is not said twice */
+.cp-tagline { grid-area: q; margin: 36px 0 0; text-align: center; font: 400 15px / 1.5 var(--cp-font); color: var(--cp-text-2); }
+.cp-q {
+  display: block; margin: 0 auto 12px; font: 600 var(--cp-q) / 1.04 var(--cp-font); letter-spacing: -0.035em; color: var(--cp-text);
+  text-wrap: balance;
 }
-.cp-pill .k { color: var(--cp-text-2); font-weight: 500; }
-.cp-pill b { font-weight: 600; }
-.cp-pill .d { font-weight: 600; }
+.cp-tagline > .cp-sep, .cp-tagline > .nw, .cp-by > .cp-sep { display: none; }
+.cp-by { white-space: nowrap; }
+.cp-by:empty { display: none; }
+/* 21 Nov 2026: no pills; the status is one quiet line, its dot azure (green and red are for signed numbers) */
+.cp-pills { display: none; }
+.cp-status {
+  display: inline-flex; align-items: center; gap: 8px; font: 500 13.5px / 1.3 var(--cp-font); color: var(--cp-text); white-space: nowrap;
+}
 .cp-status:empty { display: none; }
-.cp-status { color: var(--cp-text); }
-.cp-status .rest { color: var(--cp-text-2); }
-.cp-status i { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--cp-up); }
-.cp-status.is-idle i { background: var(--cp-text-3); }
+/* the DOM is the label (k) then the value (v) with the dot in it (cp.js statusPill, tests pin its text): the value's box
+   steps aside so the dot can lead the line */
+.cp-status .k { color: var(--cp-text-2); font-weight: 400; }
+.cp-status .v { display: contents; }
+.cp-status i { order: -1; width: 7px; height: 7px; margin-right: 1px; border-radius: 50%; flex: none; background: var(--cp-accent); box-shadow: 0 0 0 3px rgba(108, 180, 255, 0.16); }
+.cp-status.is-idle i { background: var(--cp-text-3); box-shadow: none; }
 .cp-status.is-live:not(.still) i { animation: cp-pulse 2.4s infinite; }
 @keyframes cp-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(47, 209, 122, 0.45); } 70% { box-shadow: 0 0 0 7px rgba(47, 209, 122, 0); } 100% { box-shadow: 0 0 0 0 rgba(47, 209, 122, 0); }
-}
-@media (min-width: 1200px) {
-  :root { --cp-stick: var(--cp-top); }
-  body[data-page="cp"] header.top { position: sticky; top: 0; }
-  body[data-page="cp"] .top-inner { flex-wrap: nowrap; }
-  .cp-brand { flex: 0 1 auto; }
-  body[data-page="cp"] .top-right { flex-wrap: nowrap; }
-  .cp-pills { flex-wrap: nowrap; }
-}
-@media (min-width: 1200px) and (max-width: 1439px) {
-  body[data-page="cp"] .top-inner { column-gap: 16px; }
-  body[data-page="cp"] .top-right, .cp-pills { gap: 6px; }
-  .cp-pill, .cp-status { padding: 0 9px; gap: 6px; font-size: 12.5px; }
-}
-/* the narrowest desktops: a smaller mark and the status pill's short form (as on phones; its full words stay in its label
-   and tooltip), so the tagline keeps to one line (here and from 1280px, also beside a 17px classic scroll bar) */
-@media (min-width: 1200px) and (max-width: 1279px) {
-  body[data-page="cp"] .top-inner { column-gap: 12px; }
-  .cp-brand { gap: 10px; }
-  .cp-mark { width: 26px; height: 26px; }
-  .cp-pill, .cp-status { padding: 0 8px; }
-  .cp-status .lg { display: none; }
-}
-@media (max-width: 1199px) {
-  body[data-page="cp"] .top-right { flex: 1 1 100%; justify-content: flex-start; margin-left: 0; }
+  0% { box-shadow: 0 0 0 0 rgba(108, 180, 255, 0.45); } 70% { box-shadow: 0 0 0 7px rgba(108, 180, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(108, 180, 255, 0); }
 }
 
-/* ---------------------------------------------------------------- the disclaimer band and the footer */
+/* under 900px the status has a row of its own under the title, as its subtitle ("● Next orders Mon 23 Nov, 20:15
+   Berlin"), and the three links a row under it: the top row keeps the mark and the title whole. The status's row is
+   kept while the data loads (an empty status line as tall as the real one), so the question does not drop when it comes */
+@media (max-width: 899px) {
+  body[data-page="cp"] .top-inner { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "mark title" ". right" "links links" "q q"; }
+  body[data-page="cp"] .top-right { justify-content: flex-start; margin-top: 3px; }
+  .cp-links { margin: 14px 0 0; padding-left: 0; border-left: 0; }
+  .cp-status:empty { display: inline-flex; min-height: 1.3em; }
+}
+
+/* ---------------------------------------------------------------- the site bar (site.css draws it; 21 Nov 2026: one bar
+   for both pages). On #/cp it takes Markets Briefing's geometry: the whole width with its gutters (40, 32 under 1200px,
+   20 under 700px), the SV mark beside "SV Terminal" (the mark alone under 700px, the name for screen readers), and it
+   stays on screen as there: transparent over the sky at the top of the page, the bar's own dark and hairline once the
+   page has scrolled (cp.js wire(): is-stuck). The Portfolio's header then carries no mark of its own: its title starts
+   at the bar's gutter, under "SV Terminal". Without the site bar (a public build without Markets Briefing) the header
+   keeps its mark */
+body[data-page="cp"] .site-bar { position: sticky; top: 0; transition: background-color var(--cp-dur), border-color var(--cp-dur); }
+html body[data-page="cp"] .site-bar.is-stuck { background: var(--nw-bar, rgb(6, 8, 14)); border-bottom-color: var(--cp-line); }
+body[data-page="cp"] .site-bar-in { max-width: none; padding: 0 40px; }
+body[data-page="cp"] .site-mark { display: block; }
+/* a section or a decision scrolled into view stops under the bar, not behind it */
+html:has(body[data-page="cp"] #site-bar) { scroll-padding-top: var(--site-bar-h, 48px); }
+body[data-page="cp"]:has(#site-bar) .cp-mark { display: none; }
+/* the title's row keeps the mark's height (28px, 26 on phones), so the question and the hero stay where they were */
+body[data-page="cp"]:has(#site-bar) .top-inner {
+  grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: minmax(28px, auto) auto; grid-template-areas: "title links right" "q q q";
+  max-width: none; padding-inline: 40px;
+}
+@media (max-width: 1199px) {
+  body[data-page="cp"] .site-bar-in { padding: 0 32px; }
+  body[data-page="cp"]:has(#site-bar) .top-inner { padding-inline: 32px; }
+}
+@media (max-width: 899px) {
+  body[data-page="cp"]:has(#site-bar) .top-inner {
+    grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(28px, auto) auto auto auto; grid-template-areas: "title" "right" "links" "q";
+  }
+}
+@media (max-width: 767px) {
+  body[data-page="cp"]:has(#site-bar) .top-inner { grid-template-rows: minmax(26px, auto) auto auto auto; }
+}
+@media (max-width: 699px) {
+  body[data-page="cp"] .site-bar-in { padding: 0 20px; }
+  body[data-page="cp"]:has(#site-bar) .top-inner { padding-inline: 20px; }
+  body[data-page="cp"] .site-home > span {
+    position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}
+
+/* ---------------------------------------------------------------- the disclaimer and the footer: the disclaimer is the
+   hero's fine print, one quiet centred line under the byline (its words and its Legal link unchanged) */
 body[data-page="cp"] .pub-disclaimer {
-  width: 100%; max-width: var(--cp-max); margin: 12px auto 0; padding: 0 var(--cp-gutter); border: 0; border-radius: 0; background: none;
+  width: 100%; max-width: var(--cp-max); margin: 6px auto 0; padding: 0 var(--cp-gutter); border: 0; border-radius: 0; background: none;
 }
 body[data-page="cp"] .pub-disclaimer p {
-  margin: 0; padding: 7px 14px; border: 1px solid var(--cp-line); border-radius: var(--cp-r2); background: transparent;
-  font: 400 13px / 1.45 var(--cp-font); color: var(--cp-text-2); max-width: none;
+  max-width: 860px; margin: 0 auto; padding: 0; border: 0; border-radius: 0; background: none; text-align: center; text-wrap: balance;
+  font: 400 12.5px / 1.5 var(--cp-font); color: var(--cp-text-2);
 }
 body[data-page="cp"] .pub-disclaimer a, body[data-page="cp"] footer.foot a {
   color: var(--cp-link); text-decoration: underline; text-underline-offset: 3px;
 }
 body[data-page="cp"] footer.foot {
-  max-width: var(--cp-max); margin: 0 auto; padding: 0 var(--cp-gutter) 40px; font: 400 13px / 1.55 var(--cp-font); color: var(--cp-text-2);
+  max-width: var(--cp-max); margin: 0 auto; padding: 0 var(--cp-gutter) 44px; font: 400 12.5px / 1.6 var(--cp-font); color: var(--cp-text-2);
 }
-body[data-page="cp"] footer.foot p { margin: 0; padding-top: 16px; border-top: 1px solid var(--cp-line); }
+body[data-page="cp"] footer.foot p { margin: 0; padding-top: 18px; border-top: 1px solid var(--cp-line); }
 
 /* ================================================================ reset inside the page and its dialogs */
 :where(.cp, .cp-dialog) :where(h1, h2, h3, h4, p, ol, ul, dl, dd, figure, blockquote, pre) { margin: 0; }
@@ -221,7 +277,7 @@ body[data-page="cp"] details[open] > summary::before { content: ""; transform: r
 .cp-na { color: var(--cp-text-2); }
 .cp-sep { color: var(--cp-text-3); }
 .cp-muted2 { color: var(--cp-text-2); }
-.cp-hint { margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--cp-text-2); }
+.cp-hint { margin-top: 12px; font-size: 12.5px; line-height: 1.5; color: var(--cp-text-2); }
 .cp-flag { color: var(--cp-text); font-weight: 600; }
 .cp-empty {
   display: grid; place-content: center; gap: 4px; min-height: 120px; padding: 16px; text-align: center; color: var(--cp-text);
@@ -233,7 +289,7 @@ body[data-page="cp"] details[open] > summary::before { content: ""; transform: r
 .cp-chev { flex: none; color: var(--cp-text-2); transition: transform var(--cp-dur) var(--cp-ease); }
 [aria-expanded="true"] > .cp-chev { transform: rotate(90deg); }
 .cp-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 14px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 16px;
   border: 1px solid var(--cp-line-2); border-radius: 999px; background: var(--cp-raised);
   font: 600 13px / 1 var(--cp-font); color: var(--cp-text); white-space: nowrap; text-decoration: none;
   transition: background-color var(--cp-dur), border-color var(--cp-dur);
@@ -249,16 +305,49 @@ body[data-page="cp"] a.cp-btn { color: var(--cp-text); text-decoration: none; }
    colours, not by opacity, so its focus ring keeps its full contrast */
 .cp-btn[aria-disabled="true"] { border-color: var(--cp-line-2); background: transparent; color: var(--cp-text-2); cursor: default; }
 .cp-btn.sm { height: 26px; padding: 0 9px; font: 500 12px / 1 var(--cp-font); }
+/* actions as words over a rule (21 Nov 2026, as on Markets Briefing; no filled or outlined pills): in the dialogs and
+   "Show all" under the decisions. The main one white over a 2px azure rule 6px under it, the others gray over a 1px rule */
+body[data-page="cp"] .cp-dialog .cp-btn, body[data-page="cp"] .cp-btn.cp-all {
+  display: inline-flex; align-items: center; height: auto; padding: 0; border: 0; border-radius: 0; background: none;
+  font: 600 14px / 1.4 var(--cp-font); color: var(--cp-text-2); cursor: pointer;
+  text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: rgba(255, 255, 255, 0.22); text-underline-offset: 6px;
+  transition: color var(--cp-dur), text-decoration-color var(--cp-dur);
+}
+body[data-page="cp"] .cp-dialog .cp-btn.pri, body[data-page="cp"] .cp-btn.cp-all {
+  color: var(--cp-text); text-decoration-thickness: 2px; text-decoration-color: var(--cp-accent);
+}
+body[data-page="cp"] .cp-dialog .cp-btn.sm { font: 500 13px / 1.4 var(--cp-font); }
+@media (hover: hover) {
+  body[data-page="cp"] .cp-dialog .cp-btn:hover:not(:disabled, [aria-disabled="true"]), body[data-page="cp"] .cp-btn.cp-all:hover {
+    border-color: transparent; background: none; color: var(--cp-text); text-decoration: underline !important;
+    text-decoration-color: rgba(255, 255, 255, 0.5);
+  }
+  body[data-page="cp"] .cp-dialog .cp-btn.pri:hover:not(:disabled, [aria-disabled="true"]), body[data-page="cp"] .cp-btn.cp-all:hover {
+    text-decoration-color: var(--cp-accent);
+  }
+}
+body[data-page="cp"] .cp-dialog .cp-btn[aria-disabled="true"] { color: var(--cp-text-2); text-decoration-color: transparent; cursor: default; }
+@media (pointer: coarse) {
+  body[data-page="cp"] .cp-dialog .cp-btn, body[data-page="cp"] .cp-btn.cp-all { min-height: 44px; }
+}
 .cp-link { padding: 0; border: 0; background: none; font: inherit; color: var(--cp-link); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-/* the segmented control: a dark track, the selected part an azure-tinted pill with an azure outline and azure text */
-.cp-seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--cp-line); border-radius: 999px; background: var(--cp-bg); }
+/* the range and unit switches: words, the selected one white with the accent under it (Markets Briefing's view switch,
+   "Room · List"); a hairline between the two groups */
+.cp-seg { display: inline-flex; gap: 4px; padding: 0; border: 0; background: none; }
 .cp-seg button {
-  min-width: 36px; height: 26px; padding: 0 11px; border: 0; border-radius: 999px; background: transparent;
-  font: 600 12px / 1 var(--cp-font); color: var(--cp-text-2);
-  transition: background-color var(--cp-dur), color var(--cp-dur), box-shadow var(--cp-dur);
+  position: relative; min-width: 32px; height: 32px; padding: 0 6px; border: 0; border-radius: 0; background: none;
+  font: 600 13px / 1 var(--cp-font); color: var(--cp-text-2); transition: color var(--cp-dur);
+}
+.cp-seg button::after {
+  content: ""; position: absolute; left: 6px; right: 6px; bottom: 3px; height: 2px; border-radius: 1px; background: transparent;
+  transition: background-color var(--cp-dur);
 }
 .cp-seg button:hover { color: var(--cp-text); }
-.cp-seg button[aria-pressed="true"] { background: var(--cp-accent-soft); box-shadow: inset 0 0 0 1px var(--cp-accent-line); color: var(--cp-accent); }
+.cp-seg button[aria-pressed="true"] { color: var(--cp-text); }
+.cp-seg button[aria-pressed="true"]::after { background: var(--cp-accent); }
+.cp-seg button:focus-visible { outline-offset: 0; border-radius: 4px; }
+.cp-tools > .cp-seg + .cp-seg { position: relative; margin-left: 13px; padding-left: 13px; }
+.cp-tools > .cp-seg + .cp-seg::before { content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 1px; background: var(--cp-line-2); }
 /* fingerprints: short on screen, the full one in the tooltip and on the clipboard */
 .cp-fp { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
 .cp-hash { font: 500 12px / 1 var(--cp-mono); color: var(--cp-text-2); letter-spacing: 0; }
@@ -271,139 +360,215 @@ body[data-page="cp"] a.cp-btn { color: var(--cp-text); text-decoration: none; }
 .cp-copy:hover { background: var(--cp-pill); color: var(--cp-text); }
 .cp-copy .i-check, .cp-copy.done .i-copy { display: none; }
 .cp-copy.done .i-check { display: block; color: var(--cp-text); }
-/* the series swatches (legend, readout, table heads): Claude a solid line, the ETF a dashed one */
+/* the series swatches (the scoreboard, table heads): Claude a solid line, the ETF a dashed one */
 .cp-sw { display: inline-block; width: 14px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 2px solid var(--cp-series-claude); }
 .cp-sw.e { border-top: 2px dashed var(--cp-series-etf); }
 
-/* ================================================================ the dashboard grid: two rows of three, the chart and the
-   decisions in the middle, Allocation and Recent fills stacked in the right column of the second row */
+/* ================================================================ the page's grid (21 Nov 2026): the hero across the
+   page (the scoreboard, then the chart), then two columns: Holdings and Decisions at the left (7 of 12), Risk,
+   Allocation and Recent fills stacked at the right (.cp-side, 5 of 12), each section as tall as its content (no list
+   scrolls inside). The rows meet with no gap: the room between two sections is their own margin (--cp-row), the room
+   between the scoreboard and the chart the chart's */
 .cp-dash {
-  display: grid; gap: var(--cp-gap); grid-template-columns: repeat(12, minmax(0, 1fr));
+  display: grid; column-gap: var(--cp-gap); row-gap: 0; grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-areas:
-    "port port port perf perf perf perf perf perf hold hold hold"
-    "risk risk risk dec dec dec dec dec dec side side side";
-  max-width: var(--cp-max); margin: 0 auto; padding: var(--cp-gap) var(--cp-gutter) 28px;
+    "port port port port port port port port port port port port"
+    "perf perf perf perf perf perf perf perf perf perf perf perf"
+    "hold hold hold hold hold hold hold side side side side side"
+    "dec dec dec dec dec dec dec side side side side side";
+  max-width: var(--cp-max); margin: 0 auto; padding: 26px var(--cp-gutter) 72px;
 }
 .p-port { grid-area: port; }
 .p-perf { grid-area: perf; }
 .p-hold { grid-area: hold; }
 .p-risk { grid-area: risk; }
-.p-dec { grid-area: dec; }
-.cp-side { grid-area: side; display: flex; flex-direction: column; gap: var(--cp-gap); min-width: 0; }
+.p-dec { grid-area: dec; margin-top: var(--cp-row); }
+.cp-side { grid-area: side; display: flex; flex-direction: column; gap: var(--cp-row); min-width: 0; }
 
-/* ---------------------------------------------------------------- the panel */
-.cp-panel {
-  position: relative; display: flex; flex-direction: column; min-width: 0; padding: 15px var(--cp-pad) 17px;
-  background: var(--cp-panel); border: 1px solid var(--cp-line); border-radius: var(--cp-r); scroll-margin-top: calc(var(--cp-stick) + 16px);
-}
-.cp-ph { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px 12px; margin-bottom: 14px; }
-.cp-ph-t { min-width: 0; }
-.cp-label { display: flex; align-items: center; gap: 7px; margin: 0 0 3px; font: 500 12px / 1.35 var(--cp-font); color: var(--cp-text-2); }
-.cp-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--cp-up); }
-.cp-dot.wait { background: var(--cp-text-3); }
-.cp-dot.bad { background: var(--cp-down); }
-.cp-ph h2 { margin: 0; font: 600 16px / 1.25 var(--cp-font); letter-spacing: -0.005em; color: var(--cp-text); }
+/* ---------------------------------------------------------------- a section below the hero: no box. A hairline across
+   its columns, then its title and its caption on one line (they wrap where the column is narrow), its tools at the
+   right, then its body; the page's own background behind it all */
+.cp-panel { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 20px 0 0; scroll-margin-top: 20px; }
+.cp-panel::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: var(--cp-rule); }
+.cp-ph { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 20px; }
+.cp-ph-t { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; min-width: 0; }
+/* the titles as Markets Briefing's ("The close"): 22px at every width */
+.cp-ph h2 { margin: 0; font: 600 22px / 1.25 var(--cp-font); letter-spacing: -0.01em; color: var(--cp-text); white-space: nowrap; }
+.cp-label { margin: 0; font: 400 14px / 1.4 var(--cp-font); color: var(--cp-text-2); }
 .cp-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-left: auto; }
-/* an inner list that scrolls in its own panel (Holdings, Recent fills) from 768px: it takes the height the row leaves */
-.cp-scroll { position: relative; flex: 1 1 auto; min-height: 200px; margin: 0 calc(-1 * var(--cp-pad)); }
-.cp-scroll > * {
-  position: absolute; inset: 0; overflow-y: auto; padding: 0 var(--cp-pad); overscroll-behavior: contain;
-  scrollbar-width: thin; scrollbar-color: var(--cp-pill) transparent;
-  /* a soft fade at the bottom edge says the list goes on */
-  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent);
-  mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent);
-}
+/* 21 Nov 2026: no list scrolls inside a section at any width (Recent fills held the mouse wheel and hid most fills behind
+   a fade): its latest days, then "Show all", as Decisions */
 
-/* ---------------------------------------------------------------- Portfolio */
-.p-port .cp-pb { display: flex; flex-direction: column; flex: 1 1 auto; }
-.cp-big { font: 700 38px / 1.05 var(--cp-font); letter-spacing: -0.025em; color: var(--cp-text); }
+/* ================================================================ the hero (21 Nov 2026): no hairline, the sky behind;
+   the two hero sections keep their titles for screen readers only */
+.p-port, .p-perf { padding: 0; }
+.p-port::before, .p-perf::before { display: none; }
+.p-port > .cp-ph, .p-perf > .cp-ph {
+  position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.p-perf { margin: 24px 0 var(--cp-row); }
+
+/* ---------------------------------------------------------------- the scoreboard: the date of its figures, then three
+   columns on one grid, so the labels, the figures and the lines under them each share a row and the figures a
+   baseline. Claude's column hugs the middle from the left, the ETF's from the right: face to face across the gap */
+.cp-duel { display: grid; justify-items: center; }
+/* the figures that change under the pointer keep their width (tabular digits: the font shorthand resets the page's), and
+   the middle column keeps its own (any gap up to two digits): the labels and the two values stand still while the
+   readout runs; the two large returns may keep their own digits, their inner edges hold */
+.cp-duel-when { font: 500 13.5px / 1.3 var(--cp-font); font-variant-numeric: tabular-nums; color: var(--cp-text-2); }
+.cp-duel-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(calc(var(--cp-duel) * 2.1), auto) minmax(0, 1fr); grid-template-rows: auto auto auto;
+  column-gap: clamp(28px, 4.6vw, 80px); width: 100%; margin-top: 16px;
+}
+.cp-duel-c { display: contents; }
+.cp-duel-c.is-c > * { grid-column: 1; justify-self: end; text-align: right; }
+.cp-duel-c.is-g > * { grid-column: 2; justify-self: center; text-align: center; }
+.cp-duel-c.is-e > * { grid-column: 3; justify-self: start; text-align: left; }
+.cp-duel-k {
+  grid-row: 1; display: inline-flex; align-items: center; gap: 9px; font: 600 12px / 1.2 var(--cp-font); letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--cp-text-2); white-space: nowrap;
+}
+.cp-duel-k .cp-sw { width: 20px; margin: 0; }
+.cp-duel-n {
+  grid-row: 2; align-self: baseline; margin-top: 10px; font: 600 var(--cp-duel) / 1 var(--cp-font); letter-spacing: -0.045em;
+  color: var(--cp-text); white-space: nowrap;
+}
+.cp-duel-c.is-g .cp-duel-n { font-size: calc(var(--cp-duel) * 0.5); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.cp-duel-c.is-g .cp-duel-n small { font-size: 0.5em; font-weight: 500; letter-spacing: 0; }
+/* the chart's $ unit: the values large, a size smaller (ten characters, not seven), the returns under them. Their box is
+   as tall as the % figures' and their baseline where theirs was: the room the smaller size leaves is split as Inter
+   splits a line (0.8633 of it above the baseline, 0.1367 under it). So the scoreboard keeps its height, the gap figure
+   does not move, and nothing under it does (the $ just clicked stays under the pointer) */
+.cp-duel.is-usd .cp-duel-c:not(.is-g) .cp-duel-n {
+  font-size: calc(var(--cp-duel) * 0.74); line-height: 1; letter-spacing: -0.04em;
+  padding: calc((1 / 0.74 - 1) * 0.8633em) 0 calc((1 / 0.74 - 1) * 0.1367em);
+}
+.cp-duel-s { grid-row: 3; margin-top: 8px; font: 500 16px / 1.3 var(--cp-font); font-variant-numeric: tabular-nums; color: var(--cp-text-2); white-space: nowrap; }
+.cp-duel-c.is-g .cp-duel-s { font-size: 14px; }
+
+/* ---------------------------------------------------------------- the chart: across the page, on the sky */
+.cp-plot-w { position: relative; margin-top: 16px; }
+.cp-plot { position: relative; height: var(--cp-plot); min-width: 0; }
+.p-perf .cp-plot-w::before {
+  content: ""; position: absolute; z-index: -1; left: 4%; right: 4%; bottom: -60px; height: 80%; pointer-events: none;
+  background: radial-gradient(50% 50% at 50% 62%, rgba(52, 104, 220, 0.16), rgba(52, 104, 220, 0) 100%);
+}
+/* what happened on the session under the pointer (a decision, a fill): over the plot, so nothing moves */
+.cp-plot-ev {
+  position: absolute; top: 6px; left: 6px; z-index: 3; max-width: calc(100% - 100px); padding: 5px 10px; border: 1px solid var(--cp-sheet-line);
+  border-radius: 10px; background: rgba(14, 18, 28, 0.92); font-size: 12.5px; color: var(--cp-text); pointer-events: none;
+}
+.cp-plot-ev:empty { display: none; }
+.cp-plot.has-event { cursor: pointer; }
+.cp-plot.is-empty { display: grid; place-items: center; height: auto; min-height: 220px; border: 1px dashed var(--cp-line-2); border-radius: var(--cp-r2); }
+/* while the data loads: the chart's hairlines where its pane will be (the price axis and the dates left empty) */
+.cp-plot.is-skel {
+  background: repeating-linear-gradient(180deg, var(--cp-grid) 0 1px, transparent 1px 25%) 0 8px / calc(100% - 64px) calc(100% - 40px) no-repeat;
+}
+.cp-plot .fallback { display: grid; place-items: center; height: 100%; margin: 0; color: var(--cp-text-2); font-size: 13px; }
+/* under the chart, one quiet line: the range and the unit, what the colors and marks mean, the source */
+.cp-pf { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px; margin-top: 12px; font-size: 12.5px; color: var(--cp-text-2); }
+.cp-pf .cp-tools { margin: 0 0 0 -6px; gap: 0; }     /* the first word's text on the page's edge */
+.cp-keys { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.cp-keys .k-band { display: inline-block; width: 14px; height: 9px; border-radius: 2px; vertical-align: -0.5px; }
+.cp-keys .k-band.up { background: rgba(47, 209, 122, 0.5); }
+.cp-keys .k-band.down { background: rgba(255, 77, 79, 0.55); }
+.cp-keys .k-dec { color: var(--cp-text-2); }
+.cp-keys .k-fill { color: var(--cp-series-claude); font-size: 11px; }   /* the fill markers sit on Claude's line: its azure */
+.cp-pf.no-band .kb { display: none; }     /* no shaded gap on the chart (a week or a month in dollars): no keys for it */
+.cp-src { margin-left: auto; }
+
+/* ---------------------------------------------------------------- the Portfolio panel before the first fills */
+.p-port .cp-pb { display: grid; justify-items: center; gap: 18px; text-align: center; }
+.cp-big { font: 600 var(--cp-duel) / 1 var(--cp-font); letter-spacing: -0.045em; color: var(--cp-text); }
 /* "since 19 Oct" is written with no-break spaces (cp.js), so on a short line the date moves down whole, never "since 19 / Oct" */
 .cp-chg { margin-top: 10px; font-size: 14px; font-weight: 600; }
 .cp-since { color: var(--cp-text-2); font-weight: 400; }
-.cp-vs { margin-top: 6px; font-size: 13px; color: var(--cp-text-2); }
-.cp-vs b { font-weight: 600; color: var(--cp-text); }
-.cp-kvs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--cp-line); }
-.cp-port-top { padding-bottom: 18px; }
+.cp-kvs { display: grid; grid-template-columns: repeat(4, minmax(0, auto)); gap: 14px 40px; text-align: left; }
+.cp-kv dt { font: 500 12px / 1.3 var(--cp-font); color: var(--cp-text-2); }
+.cp-kv dd { margin: 3px 0 0; }
+.cp-kv dd b { display: block; font: 600 15px / 1.3 var(--cp-font); color: var(--cp-text); }
+.cp-kv dd span { display: block; margin-top: 1px; font-size: 12px; line-height: 1.35; color: var(--cp-text-2); }
+
+/* ---------------------------------------------------------------- Holdings (21 Nov 2026: the whole list in view, every
+   company's logo, the count of holdings ahead of the ETF at its head) */
 /* the holdings against the S&P 500 ETF, each since it was bought (17 Nov 2026): the count, then one segment per holding,
-   largest first, azure when ahead (a count, not a signed number: no green or red); it fills the panel's middle */
-.cp-ahead { padding-bottom: 16px; }
-.cp-ahead p { font-size: 12px; line-height: 1.35; color: var(--cp-text-2); }
+   largest first, azure when ahead (a count, not a signed number: no green or red) */
+/* the count, and beside it one segment per holding (the factsheet's short strip) */
+.cp-ahead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin: -4px 0 18px; }
+.cp-ahead p { font-size: 14px; line-height: 1.4; color: var(--cp-text-2); }
 .cp-ahead p b { font-weight: 600; color: var(--cp-text); }
 /* the count opens Track record (17 Nov 2026): the line keeps its greys, its underline the soft azure of running-text
    links (so colour is not its only cue); under the pointer the text turns white and the underline azure */
 body[data-page="cp"] .cp-ahead a { color: inherit; text-decoration-color: var(--cp-accent-line); }
 body[data-page="cp"] .cp-ahead a:hover { color: var(--cp-text); text-decoration-color: var(--cp-accent); }
-.cp-ahead-bar { display: flex; gap: 3px; height: 6px; margin-top: 8px; }
+.cp-ahead-bar { display: flex; gap: 3px; width: 182px; height: 6px; }
 .cp-ahead-bar i { flex: 1 1 0; min-width: 0; border-radius: 2px; background: var(--cp-pill); }
 .cp-ahead-bar i.on { background: var(--cp-accent); }
-.cp-kv dt { font: 500 12px / 1.3 var(--cp-font); color: var(--cp-text-2); }
-.cp-kv dd { margin: 3px 0 0; }
-.cp-kv dd b { display: block; font: 600 15px / 1.3 var(--cp-font); color: var(--cp-text); }
-.cp-kv dd span { display: block; margin-top: 1px; font-size: 12px; line-height: 1.35; color: var(--cp-text-2); }
-.cp-foot { margin-top: 14px; font-size: 12px; color: var(--cp-text-2); }
-
-/* ---------------------------------------------------------------- Performance */
-.cp-ro { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; min-height: 22px; margin-bottom: 8px; font-size: 13px; color: var(--cp-text-2); }
-.cp-ro > span { white-space: nowrap; }
-.cp-ro-d { color: var(--cp-text); font-weight: 600; }
-.cp-ro b { font-weight: 600; color: var(--cp-text); }
-.cp-ro b.up { color: var(--cp-up); }
-.cp-ro b.down { color: var(--cp-down); }
-.cp-ro-ev { flex: 1 1 auto; text-align: right; }
-.cp-plot-w { position: relative; }
-.cp-plot { position: relative; height: var(--cp-plot); min-width: 0; }
-/* what happened on the session under the pointer (a decision, a fill): over the plot, so nothing moves */
-.cp-plot-ev {
-  position: absolute; top: 6px; left: 8px; z-index: 3; max-width: calc(100% - 100px); padding: 4px 9px; border: 1px solid var(--cp-line-2);
-  border-radius: var(--cp-r3); background: rgba(21, 22, 26, 0.92); font-size: 12px; color: var(--cp-text); pointer-events: none;
-}
-.cp-plot-ev:empty { display: none; }
-.cp-plot.has-event { cursor: pointer; }
-.cp-plot.is-empty { display: grid; place-items: center; border: 1px dashed var(--cp-line-2); border-radius: var(--cp-r2); }
-.cp-plot .fallback { display: grid; place-items: center; height: 100%; margin: 0; color: var(--cp-text-2); font-size: 13px; }
-.cp-plot.reveal { animation: cp-wipe 900ms var(--cp-ease) both; }
-@keyframes cp-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-.cp-pf { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 10px; font-size: 12px; color: var(--cp-text-2); }
-.cp-keys { display: flex; flex-wrap: wrap; gap: 4px 14px; }
-.cp-keys .k-dec { color: var(--cp-text-2); }
-.cp-keys .k-fill { color: var(--cp-series-claude); font-size: 10px; }   /* the fill markers sit on Claude's line: its azure */
-
-/* ---------------------------------------------------------------- Holdings */
-.cp-hl-h, .cp-hrow, .cp-hl-cash { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px 52px 10px; align-items: center; gap: 8px; }
-.cp-hl-h.no-g, .cp-hl.no-g .cp-hrow, .cp-hl-cash.no-g { grid-template-columns: 42px minmax(0, 1fr) 50px 10px; }
-.cp-hl-h { padding: 0 6px 7px; border-bottom: 1px solid var(--cp-line); font: 500 12px / 1.3 var(--cp-font); color: var(--cp-text-2); }
+.cp-hl-h, .cp-hrow, .cp-hl-cash { display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 72px 12px; align-items: center; gap: 14px; }
+.cp-hl-h.no-g, .cp-hl.no-g .cp-hrow, .cp-hl-cash.no-g { grid-template-columns: 36px minmax(0, 1fr) 64px 12px; }
+.cp-hl-h { padding: 0 0 10px; border-bottom: 1px solid var(--cp-line-2); font: 500 12.5px / 1.3 var(--cp-font); color: var(--cp-text-2); }
 .cp-hl-h span:first-child { grid-column: 1 / 3; }
 .cp-hl-h span:nth-child(n + 2) { text-align: right; }
-.cp-hl { padding-top: 4px !important; padding-bottom: 4px !important; }
 .cp-hl li { border-bottom: 1px solid var(--cp-line); }
-.cp-hl li:last-child { border-bottom: 0; }
 .cp-hrow {
-  width: 100%; min-height: 50px; padding: 7px 6px; border: 0; border-radius: var(--cp-r3); background: transparent; color: var(--cp-text);
+  width: 100%; min-height: 56px; padding: 10px 0; border: 0; border-radius: 0; background: transparent; color: var(--cp-text);
   text-align: left; transition: background-color var(--cp-dur);
 }
-button.cp-hrow:hover, button.cp-hrow[aria-expanded="true"] { background: var(--cp-raised); }
+/* under the pointer, and while open: a faint band that fades out at both ends (no box) */
+button.cp-hrow:hover, button.cp-hrow[aria-expanded="true"] {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.035) 16%, rgba(255, 255, 255, 0.035) 84%, rgba(255, 255, 255, 0));
+}
 button.cp-hrow:hover > .cp-chev { color: var(--cp-text); }
 .cp-hrow[aria-expanded="true"] > .cp-chev { color: var(--cp-accent); }
 .cp-hrow:focus-visible { outline-offset: -2px; }
 .cp-tk {
-  display: inline-grid; place-items: center; width: 42px; height: 32px; border-radius: var(--cp-r3); background: var(--cp-raised);
+  display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 22%; background: var(--cp-raised);
   border: 1px solid var(--cp-line); font: 700 11px / 1 var(--cp-font); letter-spacing: 0.02em; color: var(--cp-text);
 }
-.cp-tk.cash { color: var(--cp-text-2); font-size: 13px; }
+/* cash in a holding's tile: the "$" on the monogram's ground */
+.cp-tk.cash { border: 0; background: var(--cp-tile-wait); box-shadow: 0 0 0 1px var(--cp-line-2); color: var(--cp-text-2); font-size: 14px; }
 .cp-tk.has-logo { background: none; border: 0; }
-.cp-tk.has-logo img { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; background: rgb(244, 245, 247); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08); }
+/* the logo tile (21 Nov 2026, the same component as on Markets Briefing): the company's logo on a light plate, on a dark
+   ground until the image has loaded; where there is no logo, or it fails to load, the monogram: the ticker's letters in
+   gray on the dark ground in a hairline ring (one letter on the small tiles). The letters are drawn by CSS (data-mono),
+   not written as text, as the ticker is said once beside the tile or in its row. Sizes: 34 (Holdings), 20 (Recent
+   fills), 18 (Track record, a decision's fills), 16 (the decisions' change chips) */
+.cp-logo {
+  display: inline-grid; place-items: center; flex: none; width: var(--s, 18px); height: var(--s, 18px); overflow: hidden;
+  border-radius: 22%; background: var(--cp-tile-wait); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10); vertical-align: middle;
+}
+.cp-logo.is-in { background: var(--cp-tile); }
+.cp-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cp-logo.is-mono { box-shadow: 0 0 0 1px var(--cp-line-2); }
+.cp-logo.is-mono::after {
+  content: attr(data-mono); font-size: calc(var(--s, 18px) * 0.3); font-weight: 700; line-height: 1; letter-spacing: 0.02em;
+  color: var(--cp-text-2);
+}
+/* on the small tiles (under 24px) the monogram is one white letter on a light gray square, plainly a mark of its own,
+   never read as a picture that failed to load */
+.cp-logo.is-mono.one { background: var(--cp-pill); box-shadow: none; }
+.cp-logo.is-mono.one::after { font-size: calc(var(--s, 18px) * 0.6); letter-spacing: 0; color: var(--cp-text); }
+.cp-tk .cp-logo { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 6px 18px rgba(0, 0, 0, 0.35); }
+.cp-tk .cp-logo.is-mono { box-shadow: 0 0 0 1px var(--cp-line-2), 0 6px 18px rgba(0, 0, 0, 0.35); }
+.cp-tk .cp-logo.is-mono:not(.one)::after { font-size: 11px; }   /* the holdings' monogram ("HUM"): 11px, never under */
+.cp-chip .cp-logo { margin-right: 5px; }
+/* a ticker with its tile in a table row: the text gives the baseline (the rows align on it), the tile is centered on it */
+.cp-fl-tk { display: inline-flex; align-items: baseline; gap: 7px; }
+.cp-fl-tk .cp-logo { align-self: center; }
+body[data-page="cp"] a.cp-maplink { align-self: flex-start; display: inline-block; margin-top: 16px; font: 500 14px / 1.4 var(--cp-font); }
 .cp-nm { min-width: 0; }
 .cp-nm b, .cp-nm small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cp-nm b { font-size: 13px; font-weight: 500; line-height: 1.3; }
-.cp-nm small { font-size: 12px; line-height: 1.3; color: var(--cp-text-2); }
-.cp-hrow .w, .cp-hl-cash .w { text-align: right; color: var(--cp-text-2); }
-.cp-hrow .g, .cp-hl-cash .g { text-align: right; font-weight: 600; }
-.cp-hdet { padding: 2px 6px 14px 56px; font-size: 13px; line-height: 1.55; color: var(--cp-text); }
+.cp-nm b { font-size: 15px; font-weight: 500; line-height: 1.3; }
+.cp-nm small { margin-top: 1px; font-size: 13px; line-height: 1.3; color: var(--cp-text-2); }
+.cp-hrow .w, .cp-hl-cash .w { text-align: right; color: var(--cp-text-2); font-size: 14px; }
+.cp-hrow .g, .cp-hl-cash .g { text-align: right; font-weight: 600; font-size: 14px; }
+.cp-hdet { padding: 4px 0 18px 50px; font-size: 14px; line-height: 1.6; color: var(--cp-text); }
 .cp-hdet p + p { margin-top: 8px; }
 .cp-hdet .k { display: block; margin-bottom: 1px; font-size: 12px; font-weight: 500; color: var(--cp-text-2); }
 .cp-hdet .meta { font-size: 12px; color: var(--cp-text-2); }
 .cp-hdet-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin-bottom: 8px; }
-.cp-vsetf { font-size: 12px; line-height: 1.4; color: var(--cp-text-2); }
+.cp-vsetf { font-size: 12.5px; line-height: 1.4; color: var(--cp-text-2); }
 .cp-vsetf b { font-weight: 600; color: var(--cp-text); }
 /* Claude's conviction: a small label with a three-step meter, its steps azure */
 .cp-conv {
@@ -416,14 +581,14 @@ button.cp-hrow:hover > .cp-chev { color: var(--cp-text); }
 .cp-conv .bars i:nth-child(2) { height: 7px; }
 .cp-conv .bars i:nth-child(3) { height: 10px; }
 .cp-conv .bars i.on { background: var(--cp-accent); }
-.cp-hl-cash { padding: 9px 6px 0; border-top: 1px solid var(--cp-line); font-size: 13px; }
+.cp-hl-cash { min-height: 56px; padding: 10px 0; border-bottom: 1px solid var(--cp-line-2); font-size: 15px; }
 .cp-hl-cash b { font-weight: 500; }
 .cp-hl-cash .g { color: var(--cp-text-2); font-weight: 500; }
 
 /* ---------------------------------------------------------------- Risk vs S&P 500 ETF */
-.cp-rk { font-size: 13px; }
-.cp-rk th, .cp-rk td { padding: 8px 0; border-bottom: 1px solid var(--cp-line); }
-.cp-rk thead th { padding-top: 0; font-size: 12px; font-weight: 500; color: var(--cp-text-2); }
+.cp-rk { font-size: 14px; }
+.cp-rk th, .cp-rk td { padding: 9px 0; border-bottom: 1px solid var(--cp-line); }
+.cp-rk thead th { padding-top: 0; font-size: 12.5px; font-weight: 500; color: var(--cp-text-2); border-bottom-color: var(--cp-line-2); }
 .cp-rk thead th:nth-child(n + 2), .cp-rk td { text-align: right; white-space: nowrap; }
 .cp-rk thead th:nth-child(n + 2) { width: 26%; }
 .cp-rk tbody th { font-weight: 500; color: var(--cp-text); padding-right: 8px; cursor: help; }
@@ -431,90 +596,104 @@ button.cp-hrow:hover > .cp-chev { color: var(--cp-text); }
 .cp-rk td.na { color: var(--cp-text-2); font-weight: 400; }
 .cp-rk td.is-gated { font-weight: 400; color: var(--cp-text-2); }
 .cp-rk tbody tr:last-child > * { border-bottom: 0; }
-.cp-lock { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+.cp-lock { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
 .cp-lock svg { color: var(--cp-text-3); }
-.cp-n { margin-left: 4px; font-size: 11px; font-weight: 400; color: var(--cp-text-2); }
+.cp-n { margin-left: 4px; font-size: 11.5px; font-weight: 400; color: var(--cp-text-2); }
 /* beta's "n = 19" stands just before its figure, out of the flow, so the figure lines up with the others in Claude's
    column (it stood 41px to their left); it reaches into the free right part of the measure's name column */
 .cp-fig { position: relative; }
 .cp-fig .cp-n { position: absolute; right: 100%; margin: 0 6px 0 0; white-space: nowrap; }
-.cp-caveat { margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--cp-text-2); }
-.cp-how { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--cp-line); }
-.p-risk .cp-how { margin-top: auto; }
-.p-risk .cp-caveat { margin-bottom: 14px; }
+.cp-caveat { margin-top: 14px; font-size: 13px; line-height: 1.5; color: var(--cp-text-2); }
+.cp-how { margin-top: 16px; }
+.p-risk .cp-how { margin-top: auto; padding-top: 16px; }
+.p-risk .cp-caveat { margin-bottom: 20px; }
 /* under the measures (17 Nov 2026): Claude's reading of the portfolio's risk or, until there is one, the biggest bets
    against the S&P 500 under a small grey label with the table head's rule: a second small table in the rhythm of the
    first, neutral (an overweight is neither a gain nor a loss, so no green or red). In the panel's flow, never a box that
    scrolls; "How computed" stays at the panel's foot */
 .cp-rx { margin-bottom: 14px; }
 .cp-rx-in { display: grid; align-content: start; gap: 14px; }
-.cp-k { margin: 0; padding-bottom: 6px; border-bottom: 1px solid var(--cp-line); font: 500 12px / 1.35 var(--cp-font); color: var(--cp-text-2); }
+.cp-k { margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--cp-line-2); font: 500 12.5px / 1.35 var(--cp-font); color: var(--cp-text-2); }
 .cp-bets li {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--cp-line);
-  font-size: 13px; font-weight: 500; line-height: 1.5;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--cp-line);
+  font-size: 14px; font-weight: 500; line-height: 1.5;
 }
 .cp-bets li:last-child { padding-bottom: 0; border-bottom: 0; }
 .cp-bets b { font-weight: 600; white-space: nowrap; }
 .p-risk .cp-rq { margin: 0; }
-.cp-quote.cp-rq blockquote { display: block; -webkit-line-clamp: unset; overflow: visible; font-size: 13px; }
-.cp-how-b { display: grid; gap: 10px; font-size: 12px; line-height: 1.5; color: var(--cp-text-2); }
+.cp-quote.cp-rq blockquote { display: block; -webkit-line-clamp: unset; overflow: visible; font-size: 14px; line-height: 1.6; }
+.cp-how-b { display: grid; gap: 10px; font-size: 13px; line-height: 1.55; color: var(--cp-text-2); }
 .cp-how-b dl { display: grid; gap: 6px; }
 .cp-how-b dt { font-weight: 600; color: var(--cp-text); }
 .cp-how-b dd { margin: 0; }
 .cp-how-b dl.f dd { overflow-wrap: anywhere; }
-.cp-how-b pre { padding: 8px 10px; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: var(--cp-r3); background: var(--cp-bg); }
-.cp-how-b pre code { font-size: 12px; color: var(--cp-text); }
+.cp-how-b pre { padding: 9px 11px; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: var(--cp-r3); background: rgba(255, 255, 255, 0.04); }
+.cp-how-b pre code { font-size: 12.5px; color: var(--cp-text); }
 
 /* ---------------------------------------------------------------- Decisions (a broker's order list) */
-.cp-quote {
-  position: relative; margin-bottom: 12px; padding: 12px 14px 12px 17px; border: 1px solid var(--cp-line); border-radius: var(--cp-r2);
-  background: var(--cp-raised);
-}
-/* Claude's words: an azure rule down the quote's left edge */
-.cp-quote::before {
-  content: ""; position: absolute; left: -1px; top: 12px; bottom: 12px; width: 3px; border-radius: 0 3px 3px 0; background: var(--cp-accent);
-}
+/* Claude's words, wherever they are quoted (its latest note here, its reading of the risk): no box, an azure rule down
+   their left edge, the deck's grey */
+.cp-quote { position: relative; margin: 0 0 28px; padding: 2px 0 2px 20px; border: 0; background: none; }
+.cp-quote::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 2px; border-radius: 1px; background: var(--cp-accent); }
 .cp-quote blockquote {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
-  font-size: 14px; line-height: 1.55; color: var(--cp-text);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
+  max-width: 46em; font-size: 18px; line-height: 1.6; letter-spacing: -0.006em; color: var(--cp-deck);
 }
-.cp-quote figcaption { margin-top: 6px; font-size: 12px; color: var(--cp-text-2); }
-.cp-dt-wrap { margin: 0 calc(-1 * var(--cp-pad)); padding: 0 var(--cp-pad); overflow-x: auto; }
-.cp-dt { font-size: 13px; }
+.cp-quote figcaption { margin-top: 10px; font-size: 13.5px; color: var(--cp-text-2); }
+.cp-dt-wrap { margin: 0; padding: 0; overflow-x: auto; }
+.cp-dt { font-size: 14px; }
+/* from 768px the columns have fixed widths (Changes takes the rest): "Show all" adds rows without moving a column */
+@media (min-width: 768px) {
+  .cp-dt-wrap { overflow-x: visible; }
+  .cp-dt { table-layout: fixed; }
+  .cp-dt thead .c-date { width: 116px; }
+  .cp-dt thead .c-res { width: 96px; }
+  .cp-dt thead .c-ord { width: 64px; }
+  .cp-dt thead .c-ven { width: 84px; }
+  .cp-dt thead .c-fp { width: 112px; }
+}
+/* the copy button's icon on the column's right edge, as the head and the rows' other ends (its tap area unchanged) */
+.cp-dt .cp-copy { margin-right: -6px; }
 .cp-dt thead th {
-  padding: 0 8px 8px; border-bottom: 1px solid var(--cp-line); font-size: 12px; font-weight: 500; color: var(--cp-text-2); white-space: nowrap;
+  padding: 0 8px 10px; border-bottom: 1px solid var(--cp-line-2); font-size: 12.5px; font-weight: 500; color: var(--cp-text-2); white-space: nowrap;
 }
-.cp-dt td { padding: 7px 8px; border-bottom: 1px solid var(--cp-line); vertical-align: middle; }
+.cp-dt td { padding: 11px 8px; border-bottom: 1px solid var(--cp-line); vertical-align: middle; }
 .cp-dt th:first-child, .cp-dt td:first-child { padding-left: 0; }
 .cp-dt th:last-child, .cp-dt td:last-child { padding-right: 0; text-align: right; }
 .cp-dt .c-ord { text-align: right; white-space: nowrap; }
-.cp-drow { cursor: pointer; transition: background-color var(--cp-dur); scroll-margin-top: calc(var(--cp-stick) + 20px); }
+.cp-drow { cursor: pointer; transition: background-color var(--cp-dur); scroll-margin-top: 20px; }
 .cp-drow:hover > td { background: rgba(255, 255, 255, 0.025); }
 .cp-drow:hover .cp-chev { color: var(--cp-text); }
 .cp-drow.open .cp-chev { color: var(--cp-accent); }
 .cp-drow.open > td { border-bottom-color: transparent; }
 .cp-dbtn {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 2px; margin-left: -2px; border: 0; border-radius: var(--cp-r3);
-  background: transparent; font: 600 13px / 1.2 var(--cp-font); color: var(--cp-text); white-space: nowrap;
+  background: transparent; font: 600 14px / 1.2 var(--cp-font); color: var(--cp-text); white-space: nowrap;
 }
 .cp-dbtn:focus-visible { outline-offset: 0; }
 .c-res { font-weight: 600; white-space: nowrap; }
-.c-res.up { color: var(--cp-up); }
+/* "Traded" is a word, not a signed number: white, as "Scheduled" (resultOf keeps its class "up"); "Held" and "No orders"
+   grey */
+body[data-page="cp"] .cp-dt .c-res.up { color: var(--cp-text); font-weight: 600; }
 .c-res.none { color: var(--cp-text-2); font-weight: 500; }
 .c-res.sched { color: var(--cp-text); }
-.c-ven { color: var(--cp-text-2); font-size: 12px; line-height: 1.3; }
+.c-res .c-due { display: block; margin-top: 1px; font: 400 12.5px / 1.3 var(--cp-font); color: var(--cp-text-2); }   /* "Mon 23 Nov" */
+/* the newest note is quoted above the table: while its row is open, the note is there in full and the quote goes */
+.p-dec:has(.cp-drow.is-quoted.open) > .cp-quote { display: none; }
+.c-ven { color: var(--cp-text-2); font-size: 12.5px; line-height: 1.3; }
 .cp-dt .sm { display: none; }
 .cp-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 /* the changes a decision made (+HUM, MRK trim): azure-tinted labels; "N more" stays a grey outline */
 .cp-chip {
-  display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border: 1px solid transparent; border-radius: 999px;
+  display: inline-flex; align-items: center; height: 24px; padding: 0 9px 0 6px; border: 1px solid transparent; border-radius: 999px;
   background: var(--cp-accent-soft); font: 600 12px / 1 var(--cp-font); color: var(--cp-accent); white-space: nowrap;
 }
-.cp-chip.more { border-color: var(--cp-line-2); color: var(--cp-text-2); font-weight: 500; background: transparent; }
+.cp-chip.more { padding: 0 9px; border-color: var(--cp-line-2); color: var(--cp-text-2); font-weight: 500; background: transparent; }
 /* a name sold is a grey outline, a resized one a quiet grey label; only a new name wears the azure tint */
 .cp-chip.out { border-color: var(--cp-line-2); background: transparent; color: var(--cp-text); }
 .cp-chip.rs { border-color: var(--cp-line); background: var(--cp-raised); color: var(--cp-text); }
 .cp-chip .k { font-weight: 500; }
+.cp-chip .cp-logo { margin-right: 6px; }
 .cp-chip.rs .k { color: var(--cp-text-2); }
 .cp-drow.fp-ok .cp-hash::after { content: " ✓"; color: var(--cp-text); }
 .cp-drow.fp-bad .cp-hash::after { content: " ✗"; color: var(--cp-down); }
@@ -525,7 +704,9 @@ button.cp-hrow:hover > .cp-chev { color: var(--cp-text); }
   color: var(--cp-text-2);
 }
 .cp-dd-h { font-size: 12px; }
-.cp-note { font-size: 14px; line-height: 1.6; color: var(--cp-text); }
+/* Claude's whole note: its words in the deck's grey with the azure rule, as wherever Claude is quoted */
+.cp-note { position: relative; padding-left: 18px; font-size: 15px; line-height: 1.65; color: var(--cp-deck); }
+.cp-note::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 2px; border-radius: 1px; background: var(--cp-accent); }
 .cp-callout { padding: 8px 12px; border-left: 2px solid var(--cp-text-3); background: var(--cp-raised); border-radius: 0 var(--cp-r3) var(--cp-r3) 0; color: var(--cp-text); }
 .cp-dd-chg { display: grid; gap: 4px; color: var(--cp-text); }
 .cp-dd-chg b { font-weight: 600; }
@@ -572,19 +753,20 @@ body[data-page="cp"] a.cp-tag:hover { background: var(--cp-accent-soft); }
 .cp .cp-sc-t small { font-size: 11px; font-weight: 400; color: var(--cp-text-2); }
 .cp-sc-n { font-weight: 400; }
 .cp-sc-x { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--cp-text-2); }
-.cp-all { margin-top: auto; align-self: flex-start; }
-.p-dec .cp-dt-wrap { margin-bottom: 12px; }
+/* "Show all 11 decisions": a text action, white over the accent's rule (the words-over-a-rule rules above) */
+.cp-all { align-self: flex-start; margin-top: 18px; }
 
 /* ---------------------------------------------------------------- Allocation */
-.cp-inv p { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--cp-text-2); }
+.cp-inv p { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; color: var(--cp-text-2); }
 .cp-inv b { font-weight: 600; color: var(--cp-text); }
-.cp-lim { font-size: 12px; }
-.cp-inv-bar { position: relative; display: flex; gap: 2px; height: 8px; margin: 7px 0 4px; }
-.cp-inv-bar .inv { border-radius: 4px 0 0 4px; background: var(--cp-accent); }
-.cp-inv-bar .cash { border-radius: 0 4px 4px 0; background: var(--cp-pill); }
-/* the cash limit: a light tick with a ring of the panel's colour, visible on the azure part and on the grey one */
+.cp-lim { font-size: 13px; }
+.cp-inv-bar { position: relative; display: flex; gap: 2px; height: 8px; margin: 9px 0 0; }
+.cp-inv-bar .inv { border-radius: 2px 0 0 2px; background: var(--cp-accent); }
+.cp-inv-bar .cash { border-radius: 0 2px 2px 0; background: var(--cp-pill); }
+/* the cash limit: a white tick taller than the bar, crossing it as a marker (no ring of the page's colour: that cut the
+   azure bar in two) */
 .cp-inv-bar .tick {
-  position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: var(--cp-text); box-shadow: 0 0 0 2px var(--cp-panel);
+  position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: var(--cp-text); box-shadow: none;
 }
 /* every sector name whole (17 Nov 2026, round 2: "Information Tec..." at 1200–1440px, never an abbreviation): each row is a
    subgrid of the list, so the name column is as wide as the longest name held and the bars still start together; the bar
@@ -597,24 +779,27 @@ body[data-page="cp"] a.cp-tag:hover { background: var(--cp-accent-soft); }
 .cp-secs .n { min-width: 0; color: var(--cp-text); }
 .cp-secs .n small { font-size: 12px; color: var(--cp-text-2); }
 .cp-secs .w { text-align: right; font-weight: 600; }
-.cp-track { height: 6px; border-radius: 3px; background: var(--cp-raised); overflow: hidden; }
-.cp-track i { display: block; height: 100%; border-radius: 3px; background: var(--cp-accent); }
-/* with the S&P 500's weights (17 Nov 2026): a head row, a grey figure after Claude's, a light tick on each bar where the
-   index stands (a ring of the panel's colour keeps it apart from the azure), and the index's other sectors in one line */
-.cp-secs.vs { grid-template-columns: auto minmax(32px, 1fr) 44px 50px; column-gap: 6px; }
+/* each sector's bars (21 Nov 2026, the factsheet's pair): Claude's weight a thick azure bar, the S&P 500's a thin grey one
+   under it, on one scale; no track behind them */
+.cp-track { display: grid; align-content: center; gap: 3px; height: 14px; }
+.cp-track i { display: block; height: 8px; border-radius: 1px; background: var(--cp-accent); }
+.cp-track .ix { height: 3px; background: var(--cp-ix); }
+/* with the S&P 500's weights (17 Nov 2026): a head row that keys the two bars, a grey figure after Claude's, a hairline
+   under each row, and the index's other sectors in one line */
+.cp-secs.vs { grid-template-columns: auto minmax(32px, 1fr) 60px 72px; column-gap: 14px; row-gap: 0; margin-top: 0; }
+.cp-secs.vs li { min-height: 38px; border-bottom: 1px solid var(--cp-line); font-size: 14px; }
 .cp-secs-h {
-  display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) 44px 50px; gap: 6px; margin-top: 10px; padding-bottom: 4px;
-  border-bottom: 1px solid var(--cp-line); font-size: 12px; color: var(--cp-text-2);
+  display: grid; grid-template-columns: minmax(0, 1fr) 60px 72px; gap: 14px; margin-top: 22px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--cp-line-2); font-size: 12.5px; color: var(--cp-text-2);
 }
-.cp-secs-h span:first-child { grid-column: 1 / 3; }
 .cp-secs-h span:nth-child(n + 2) { text-align: right; white-space: nowrap; }
-.cp-secs-h + .cp-secs { margin-top: 6px; }
-.cp-secs.vs .cp-track { position: relative; overflow: visible; }
-.cp-track .ix { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 1px; background: var(--cp-text); box-shadow: 0 0 0 1.5px var(--cp-panel); }
+.cp-secs-h .k-c::before { content: ""; display: inline-block; width: 10px; height: 8px; margin-right: 6px; border-radius: 1px; background: var(--cp-accent); }
+.cp-secs-h .k-i::before { content: ""; display: inline-block; width: 10px; height: 3px; margin-right: 6px; vertical-align: 2px; border-radius: 1px; background: var(--cp-ix); }
+.cp-secs-h + .cp-secs { margin-top: 0; }
 .cp-secs .ixw { text-align: right; color: var(--cp-text-2); white-space: nowrap; }
 /* "S&P 500" before the grey figure: for screen readers, and on screen where the head row is not shown (tablets) */
 .cp-secs .ixw .lbl { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.cp-secs-out { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--cp-text-2); }
+.cp-secs-out { margin-top: 12px; font-size: 13px; line-height: 1.5; color: var(--cp-text-2); }
 .cp-secs-out .short { display: none; }
 /* from 1200px Allocation shares its column with Recent fills: the not-held sectors in one line (the list in the tooltip) */
 @media (min-width: 1200px) {
@@ -622,56 +807,88 @@ body[data-page="cp"] a.cp-tag:hover { background: var(--cp-accent-soft); }
   .cp-secs-out .short { display: inline; }
 }
 
-/* ---------------------------------------------------------------- Recent fills (a broker's time and sales) */
-.p-fills { flex: 1 1 auto; }
-.p-fills .cp-scroll { min-height: 128px; }
-.cp-ft { font-size: 13px; }
-.cp-ft thead th { position: sticky; top: 0; z-index: 1; padding: 0 0 7px; background: var(--cp-panel); border-bottom: 1px solid var(--cp-line); font-size: 12px; font-weight: 500; color: var(--cp-text-2); }
+/* ---------------------------------------------------------------- Recent fills (a broker's time and sales): the latest
+   days in the page's flow, then "Show all" (cp.js fillsPanel); the right column as tall as its sections */
+.cp-ft { font-size: 14px; }
+.cp-ft thead th {
+  padding: 0 0 10px; border-bottom: 1px solid var(--cp-line-2); font-size: 12.5px; font-weight: 500; color: var(--cp-text-2);
+}
 .cp-ft th.num, .cp-ft td.num { text-align: right; }
-.cp-ft td { padding: 5px 0; }
+.cp-ft td { padding: 7px 0; vertical-align: middle; }
 .cp-ft td:nth-child(2) { color: var(--cp-text-2); }
-.cp-ft tr.g th { padding: 10px 0 3px; font-size: 12px; font-weight: 600; color: var(--cp-text); text-align: left; }
+.cp-ft tr.g th { padding: 14px 0 4px; font-size: 13px; font-weight: 600; color: var(--cp-text); text-align: left; }
 .cp-ft tr.g th span { font-weight: 400; color: var(--cp-text-2); }
 .cp-ft tbody:first-of-type tr.g th { padding-top: 7px; }
 .p-fills .cp-hint { margin-top: 10px; }
+.p-fills .cp-all { margin-top: 14px; }
+.p-fills .cp-all + .cp-hint { margin-top: 14px; }
 
-/* ---------------------------------------------------------------- dialogs: How it works, Verify, Rules v3, Legal.
-   One at a time; about 680px wide, nearly the whole screen on a phone, the body scrolling inside */
+/* ---------------------------------------------------------------- dialogs: How it works, Verify, Track record, Rules v3,
+   Legal. One at a time; the surface every dialog of the site shares (21 Nov 2026): a deep blue sheet with a hairline,
+   20px corners and a long shadow over a blurred backdrop, a 40px round close button; about 680px wide, a bottom sheet on
+   phones; the body scrolls inside. In: a fade and a 12px rise in 260ms; out: 180ms, where the browser can animate a
+   dialog's exit (elsewhere it simply goes). Fixed to the window, so it stays put while it fades out */
 .cp-dialog {
-  width: min(680px, calc(100vw - 32px)); max-height: min(84vh, 760px); padding: 0; margin: auto; overflow: hidden;
-  border: 1px solid var(--cp-line-2); border-radius: 18px; background: var(--cp-panel); color: var(--cp-text); box-shadow: var(--cp-shadow);
-  font: 400 14px / 1.55 var(--cp-font); font-feature-settings: "tnum" 1;
+  position: fixed; inset: 0; width: min(680px, calc(100vw - 48px)); max-width: none; max-height: min(84vh, 760px); padding: 0;
+  margin: auto; overflow: hidden; border: 1px solid var(--cp-sheet-line); border-radius: 20px; background: var(--cp-sheet);
+  color: var(--cp-text); box-shadow: var(--cp-sheet-shadow); font: 400 14px / 1.55 var(--cp-font); font-feature-settings: "tnum" 1;
 }
-.cp-dialog::backdrop { background: var(--cp-scrim); }
-.cp-dialog[open] { animation: cp-pop 180ms var(--cp-ease); }
-@keyframes cp-pop { from { opacity: 0; transform: translateY(8px) scale(0.99); } to { opacity: 1; transform: none; } }
+.cp-dialog, .cp-dialog::backdrop {
+  opacity: 0;
+  transition: opacity 180ms var(--cp-ease), transform 180ms var(--cp-ease), overlay 180ms allow-discrete, display 180ms allow-discrete;
+}
+.cp-dialog { transform: translateY(12px); }
+.cp-dialog::backdrop { background: var(--cp-backdrop); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.cp-dialog[open], .cp-dialog[open]::backdrop { opacity: 1; transition-duration: 260ms; }
+.cp-dialog[open] { transform: none; }
+@starting-style {
+  .cp-dialog[open], .cp-dialog[open]::backdrop { opacity: 0; }
+  .cp-dialog[open] { transform: translateY(12px); }
+}
+/* from 700px every dialog hangs from the same line (8% of the window from its top, at least 48px) and a tall one scrolls
+   inside: from How it works to Rules v3 nothing jumps */
+@media (min-width: 700px) {
+  .cp-dialog { margin: max(48px, 8vh) auto auto; }
+}
 .cp-dlg-in { display: flex; flex-direction: column; max-height: min(84vh, 760px); }
-.cp-dlg-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 14px; border-bottom: 1px solid var(--cp-line); }
-.cp-dlg-h h2 { margin: 0; font: 600 17px / 1.3 var(--cp-font); }
-.cp-x { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: var(--cp-raised); color: var(--cp-text); }
-.cp-x:hover { background: var(--cp-pill); }
-.cp-dlg-b {
-  display: grid; gap: 12px; overflow-y: auto; overscroll-behavior: contain; padding: 16px 18px 20px; color: var(--cp-text);
-  scrollbar-width: thin; scrollbar-color: var(--cp-pill) transparent;
+/* the header as on Markets Briefing's sheets (21 Nov 2026): an eyebrow, "CLAUDE PORTFOLIO · METHOD", its key word in the
+   accent, over the title; no title bar, no rule; the round ✕ at the right */
+.cp-dlg-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px 18px 0 28px; border-bottom: 0; }
+.cp-dlg-t { min-width: 0; padding-top: 12px; }
+.cp-dlg-k { margin: 0 0 8px; font: 600 12px / 16px var(--cp-font); letter-spacing: 0.12em; text-transform: uppercase; color: var(--cp-text-2); }
+.cp-dlg-k b { font-weight: 600; color: var(--cp-accent); }
+.cp-dlg-h h2 { margin: 0; font: 600 26px / 1.2 var(--cp-font); letter-spacing: -0.02em; }
+.cp-x {
+  display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; padding: 0; border: 1px solid var(--cp-line-2);
+  border-radius: 50%; background: transparent; color: var(--cp-text); transition: background-color var(--cp-dur), border-color var(--cp-dur);
 }
+@media (hover: hover) {
+  .cp-x:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.2); }
+}
+/* the body: rows as tall as their content (a grid item that scrolls sideways, Track record's table, would else shrink to
+   nothing), the focus when the dialog opens (cp.js), so the keyboard scrolls it */
+.cp-dlg-b {
+  display: grid; grid-auto-rows: max-content; gap: 14px; overflow-y: auto; overscroll-behavior: contain; padding: 20px 28px 28px;
+  color: var(--cp-text); scrollbar-width: thin; scrollbar-color: var(--cp-pill) transparent;
+}
+/* no ring around the body the dialog focuses (it showed as an azure line under the title, the sides cut by the dialog):
+   the dialog's heading tells the keyboard where it is. As specific as the page's ring rule, which it must beat */
+.cp-dlg-b:focus, body[data-page="cp"] .cp-dlg-b:focus-visible { outline: none; }
 .cp-dlg-b a:not(.cp-btn) { text-decoration: underline; text-underline-offset: 3px; }
 .cp-dlg-lead { color: var(--cp-text-2); }
-.cp-dlg-act { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+.cp-dlg-act { display: flex; flex-wrap: wrap; gap: 8px 30px; padding-top: 6px; }
 
-/* How it works: the five steps down a thin line, each number an azure dot */
-.cp-steps { display: grid; gap: 0; margin: 2px 0 2px; }
-.cp-steps li { position: relative; display: grid; grid-template-columns: 26px minmax(0, 1fr); column-gap: 14px; padding-bottom: 16px; }
-.cp-steps li:last-child { padding-bottom: 0; }
-.cp-steps li:not(:last-child)::before {
-  content: ""; position: absolute; left: 12.5px; top: 32px; bottom: 6px; width: 1px; background: var(--cp-line-2);
-}
+/* How it works: the five steps, numbered "01" to "05" in the accent between hairlines, as a story's facts on Markets
+   Briefing */
+.cp-steps { display: grid; gap: 0; margin: 0; }
+.cp-steps li { position: relative; padding: 12px 0 12px 40px; border-top: 1px solid var(--cp-line); }
 .cp-steps .n {
-  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--cp-accent-soft);
-  box-shadow: inset 0 0 0 1px var(--cp-accent-line); font: 700 12px / 1 var(--cp-font); color: var(--cp-accent);
+  position: absolute; left: 0; top: 17px; font: 600 12px / 1 var(--cp-font); letter-spacing: 0.04em; color: var(--cp-accent);
+  font-variant-numeric: tabular-nums;
 }
-.cp-steps .s { display: grid; gap: 2px; min-width: 0; padding-top: 3px; }
-.cp-steps b { font-size: 14px; line-height: 1.35; font-weight: 600; color: var(--cp-text); }
-.cp-steps .t { font-size: 13.5px; line-height: 1.5; color: var(--cp-text); }
+.cp-steps .s { display: grid; gap: 2px; min-width: 0; }
+.cp-steps b { font-size: 15px; line-height: 1.4; font-weight: 600; color: var(--cp-text); }
+.cp-steps .t { font-size: 14px; line-height: 1.5; color: var(--cp-text); }
 .cp-steps .m { font-size: 12px; line-height: 1.45; color: var(--cp-text-2); }
 .cp-dialog .cp-hint { margin-top: 0; padding-top: 12px; border-top: 1px solid var(--cp-line); font-size: 13px; }
 .cp-mlog { padding-top: 12px; border-top: 1px solid var(--cp-line); }
@@ -687,10 +904,12 @@ body[data-page="cp"] a.cp-tag:hover { background: var(--cp-accent-soft); }
   border-bottom: 1px solid var(--cp-line); font-size: 13px;
 }
 .cp-vrow:first-child { padding-top: 0; }
-.cp-vrow dt { font-size: 12.5px; font-weight: 500; color: var(--cp-text-2); }
-.cp-vrow dd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; min-width: 0; }
-.cp-vstat { font-size: 12.5px; color: var(--cp-text-2); }
-.cp-dl { display: flex; flex-wrap: wrap; gap: 6px; }
+.cp-vrow dt { font-size: 12px; font-weight: 500; color: var(--cp-text-2); }
+.cp-vrow dd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0; min-width: 0; }
+.cp-vstat { font-size: 13px; color: var(--cp-text-2); }
+/* the four data files on one line, as words */
+.cp-dl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
+.cp-dl .cp-sep { padding: 0 8px; }
 .cp-dialog .cp-how { margin-top: 0; padding-top: 2px; border-top: 0; }
 
 /* Track record (17 Nov 2026): the counts in one line, the median, best and worst trades as three figures between two
@@ -700,16 +919,18 @@ body[data-page="cp"] a.cp-tag:hover { background: var(--cp-accent-soft); }
 .cp-trk-sum { font-size: 14px; line-height: 1.5; color: var(--cp-text); }
 .cp-trk-sum b { font-weight: 600; }
 .cp-trk-k {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 11px 0 12px;
-  border-top: 1px solid var(--cp-line); border-bottom: 1px solid var(--cp-line);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 14px 0 15px;
+  border-top: 1px solid var(--cp-line-2); border-bottom: 1px solid var(--cp-line-2);
 }
-.cp-trk-k dt { font: 500 12px / 1.3 var(--cp-font); color: var(--cp-text-2); }
-.cp-trk-k dd { margin: 3px 0 0; }
-.cp-trk-k dd b { display: block; font: 600 16px / 1.3 var(--cp-font); color: var(--cp-text); }
+.cp-trk-k dt { font: 600 11.5px / 1.3 var(--cp-font); letter-spacing: 0.12em; text-transform: uppercase; color: var(--cp-text-2); }
+.cp-trk-k dd { margin: 6px 0 0; }
+.cp-trk-k dd b { display: block; font: 600 24px / 1.15 var(--cp-font); letter-spacing: -0.02em; color: var(--cp-text); }
 .cp-trk-k dd b.up { color: var(--cp-up); }
 .cp-trk-k dd b.down { color: var(--cp-down); }
 .cp-trk-k dd span { display: block; margin-top: 1px; font-size: 12px; line-height: 1.35; color: var(--cp-text-2); }
-.cp-trk-x { font-size: 12.5px; line-height: 1.5; color: var(--cp-text-2); }
+/* what Effect means: closed under the figures, one click away */
+.cp-trk-x p { margin-top: 8px; font-size: 13px; line-height: 1.55; color: var(--cp-text-2); }
+body[data-page="cp"] .cp-trk-x[open] > summary { margin-bottom: 0; }
 /* its own box for a table wider than the dialog; 4px of room each side, so a focus ring at the edge is not cut */
 .cp-trk-w {
   margin: 0 -4px; padding: 0 4px; overflow-x: auto; overscroll-behavior-x: contain;
@@ -727,110 +948,182 @@ body[data-page="cp"] a.cp-tag:hover { background: var(--cp-accent-soft); }
 .cp-trk td.cp-na { font-weight: 400; color: var(--cp-text-2); }
 .cp-trk small { font-size: 11px; font-weight: 400; color: var(--cp-text-2); }
 /* a decision's heading: the link, then its count of trades in grey */
-.cp-trk tr.g th { padding: 16px 0 6px; font-size: 12.5px; font-weight: 600; text-align: left; white-space: normal; }
+.cp-trk tr.g th { padding: 16px 0 6px; font-size: 13px; font-weight: 600; text-align: left; white-space: normal; }
 .cp-trk tbody:first-of-type tr.g th { padding-top: 10px; }
 .cp-trk tr.g th > span { font-weight: 400; color: var(--cp-text-2); }
 .cp-trk tbody tr:last-child > * { border-bottom: 0; }
 
-/* Rules v3: the numbered rules, then their fingerprint */
+/* Rules v3: the rules numbered "01", "02"… in the accent, as the steps of How it works, then their fingerprint */
 .cp-rules { display: grid; gap: 0; counter-reset: rule; list-style: none; }
-.cp-rules li { position: relative; padding: 8px 0 8px 32px; border-bottom: 1px solid var(--cp-line); counter-increment: rule; }
+.cp-rules li { position: relative; padding: 10px 0 10px 40px; border-top: 1px solid var(--cp-line); counter-increment: rule; }
+.cp-rules li:last-child { border-bottom: 1px solid var(--cp-line); }
 .cp-rules li::before {
-  content: counter(rule); position: absolute; left: 0; top: 9px; display: grid; place-items: center; width: 20px; height: 20px;
-  border-radius: 50%; background: var(--cp-raised); font: 700 11px / 1 var(--cp-font); color: var(--cp-text-2);
+  content: counter(rule, decimal-leading-zero); position: absolute; left: 0; top: 14px; font: 600 12px / 1 var(--cp-font);
+  letter-spacing: 0.04em; color: var(--cp-accent); font-variant-numeric: tabular-nums;
 }
 .cp-dlg-fp { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--cp-text-2); font-size: 13px; }
 /* the page under an open dialog does not scroll */
 body:has(.cp-dialog[open]) { overflow: hidden; }
 
-/* ---------------------------------------------------------------- loading */
-.cp-skel { min-height: 180px; border-color: transparent; background: linear-gradient(90deg, var(--cp-panel) 30%, rgb(27, 28, 33) 50%, var(--cp-panel) 70%) 0 0 / 300% 100%; animation: cp-shimmer 1.6s linear infinite; }
-.cp-skel.p-perf, .cp-skel.p-port, .cp-skel.p-hold { min-height: 420px; }
-.cp-skel.p-dec, .cp-skel.p-risk { min-height: 440px; }
+/* ---------------------------------------------------------------- loading: the hero keeps its room (nothing moves when
+   the data arrives); below it each section's hairline, and under it a faint band that shimmers where its title goes */
+.cp-skel { min-height: 180px; }
+.cp-skel::after {
+  content: ""; display: block; width: min(320px, 70%); height: 14px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--cp-panel) 30%, rgb(27, 28, 33) 50%, var(--cp-panel) 70%) 0 0 / 300% 100%;
+  animation: cp-shimmer 1.6s linear infinite;
+}
+/* the hero: the scoreboard in its own markup (cp.js loading(): its labels, and bars where its figures go), so it is as tall
+   as it will be; the chart's room is the plot and the line under it (32px from 1200px; on tablets and phones it wraps) */
+.cp-skel.p-port { min-height: 0; }
+.cp-skel.p-perf { min-height: calc(var(--cp-plot) + 60px); }
+.cp-skel.p-port::after, .cp-skel.p-perf::after { display: none; }
+.cp-shim {
+  display: inline-block; width: 3.4em; height: 0.66em; border-radius: 0.12em; vertical-align: baseline;
+  background: linear-gradient(90deg, var(--cp-panel) 30%, rgb(27, 28, 33) 50%, var(--cp-panel) 70%) 0 0 / 300% 100%;
+  animation: cp-shimmer 1.6s linear infinite;
+}
+/* the line under the chart takes two lines from 820 to 1199px, three from 768 to 819px, two again from 700px (the phones'
+   tighter line, no hint), then three, four under 426px and five under 360px (measured with today's legend) */
+@media (max-width: 1199px) {
+  .cp-skel.p-perf { min-height: calc(var(--cp-plot) + 89px); }
+}
+@media (max-width: 819px) {
+  .cp-skel.p-perf { min-height: calc(var(--cp-plot) + 118px); }
+}
+@media (max-width: 767px) {
+  .cp-skel.p-perf { min-height: calc(var(--cp-plot) + 89px); }
+}
+@media (max-width: 699px) {
+  .cp-skel.p-perf { min-height: calc(var(--cp-plot) + 118px); }
+}
+@media (max-width: 425px) {
+  .cp-skel.p-perf { min-height: calc(var(--cp-plot) + 140px); }
+}
+@media (max-width: 359px) {
+  .cp-skel.p-perf { min-height: calc(var(--cp-plot) + 159px); }
+}
+.cp-skel.p-hold, .cp-skel.p-dec { min-height: 520px; }
+.cp-skel.p-risk { min-height: 440px; }
 @keyframes cp-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
-.cp-dash > * { animation: cp-in 300ms var(--cp-ease) both; }
-.cp-dash > :nth-child(2) { animation-delay: 30ms; }
-.cp-dash > :nth-child(3) { animation-delay: 60ms; }
-.cp-dash > :nth-child(n + 4) { animation-delay: 90ms; }
-.cp[aria-busy] .cp-dash > * { animation: cp-shimmer 1.6s linear infinite; }
-@keyframes cp-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-/* ================================================================ 1200–1439px: the same grid, tighter
-   Holdings keeps the width its names need: the even grid gave it 281px at 1200px ("Merck ...", "Targa ..."). Its three
-   tracks are at least 100px (about 320px with the gaps), Portfolio's and Risk's at least 87px (their 281px at 1200px), so
-   Performance and Decisions give up the difference (about 550px at 1200px); from about 1372px the tracks are even again.
-   Its rows are a little tighter too (a 40px ticker, 6px gaps): about 110px for the name, so "Merck & Co.", "Nucor" and
-   "Targa Resources" show whole and only the longest names end in "...". So that the narrower Performance and Decisions
-   keep the rows of the even grid, the chart's readout and footer have smaller gaps (one line each), and below 1280px
-   the panel headers' gap and the decisions table's cells too (6px: its Changes cell no taller, and it fits beside a
-   classic scroll bar) */
+/* ---------------------------------------------------------------- the opening (21 Nov 2026; cp.js entrance() and race()):
+   once per page load, 1.1s in all. The scoreboard's words rise in while its figures replay the race and the chart draws
+   itself (150 to 1100ms); the line under the chart and the panels below follow. Nothing under prefers-reduced-motion */
+@keyframes cp-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes cp-rise-lg { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes cp-fade { from { opacity: 0; } to { opacity: 1; } }
+.cp-enter .cp-duel-when { animation: cp-rise 320ms var(--cp-ease-out) both; }
+.cp-enter .cp-duel-k { animation: cp-rise 320ms 40ms var(--cp-ease-out) both; }
+.cp-enter .cp-duel-n { animation: cp-fade 240ms 60ms var(--cp-ease-out) both; }
+.cp-enter .cp-duel-s { animation: cp-rise 320ms 100ms var(--cp-ease-out) both; }
+.cp-enter .cp-pf { animation: cp-fade 360ms 740ms var(--cp-ease-out) both; }
+.cp-enter > .p-hold { animation: cp-rise-lg 460ms 440ms var(--cp-ease-out) both; }
+.cp-enter > .p-dec { animation: cp-rise-lg 460ms 520ms var(--cp-ease-out) both; }
+.cp-enter > .cp-side { animation: cp-rise-lg 460ms 500ms var(--cp-ease-out) both; }
+
+/* ================================================================ 1200–1439px: the same page, a step smaller */
 @media (min-width: 1200px) and (max-width: 1439px) {
-  .cp-big { font-size: 33px; }
-  .cp-ahead .lg { display: none; }
   .c-ven { max-width: 92px; }
-  .cp-dash { grid-template-columns: repeat(3, minmax(87px, 1fr)) repeat(6, minmax(0, 1fr)) repeat(3, minmax(100px, 1fr)); }
-  .cp-hl-h, .cp-hrow, .cp-hl-cash { grid-template-columns: 40px minmax(0, 1fr) 42px 52px 10px; column-gap: 6px; padding-left: 4px; padding-right: 4px; }
-  .cp-hl-h.no-g, .cp-hl.no-g .cp-hrow, .cp-hl-cash.no-g { grid-template-columns: 40px minmax(0, 1fr) 50px 10px; }
-  .cp-tk { width: 40px; }
-  .cp-hdet { padding-left: 50px; }
-  .cp-ro { column-gap: 10px; }
-  .cp-pf { column-gap: 12px; }
-  .cp-keys { column-gap: 10px; }
+  .cp-pf { column-gap: 20px; }
+  .cp-keys { column-gap: 12px; }
 }
 @media (min-width: 1200px) and (max-width: 1279px) {
   .cp-ph { column-gap: 8px; }
   .cp-dt td, .cp-dt thead th { padding-left: 6px; padding-right: 6px; }   /* the outer cells keep 0 (:first-child, :last-child) */
 }
 
-/* ================================================================ 768–1199px: two columns, the chart on top
-   panels in pairs of about the same height: Portfolio with Holdings, then Risk with Recent fills (whose list takes the
-   height Risk sets: some seven fills, not one), and Allocation across the width as the last row, its sectors in two
-   columns read down. The desktop's right column (.cp-side) gives its two panels to the grid, here as on phones */
+/* ================================================================ 768–1199px: the hero across, the sections in two
+   columns: Holdings and Decisions across the width, Risk beside Recent fills, and
+   Allocation across the width as the last row, its sectors in two columns read down. The desktop's right column
+   (.cp-side) gives its sections to the grid here, as on phones; each keeps the room above it */
 @media (max-width: 1199px) {
   .cp-dash {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas: "perf perf" "port hold" "dec dec" "risk fills" "alloc alloc";
+    grid-template-areas: "port port" "perf perf" "hold hold" "dec dec" "risk fills" "alloc alloc";
   }
   .cp-side { display: contents; }
   .p-alloc { grid-area: alloc; }
   .p-fills { grid-area: fills; }
-  .p-hold .cp-scroll { min-height: 280px; }
+  .p-risk, .p-alloc, .p-fills { margin-top: var(--cp-row); }
+  .cp-src { margin-left: 0; }
+  /* the scoreboard's middle column: as wide as a one-digit gap at this size, so it stays put too */
+  .cp-duel-row { grid-template-columns: minmax(0, 1fr) minmax(calc(var(--cp-duel) * 1.8), auto) minmax(0, 1fr); }
 }
 @media (min-width: 768px) and (max-width: 1199px) {
   .p-alloc .cp-secs { display: block; columns: 2; column-gap: 40px; }
   /* the name column as wide as the longest sector name ("Communication Services"), so each bar starts near its name */
   .p-alloc .cp-secs li { grid-template-columns: 12em minmax(0, 1fr) 44px; column-gap: 10px; break-inside: avoid; margin-bottom: 5px; }
-  .p-alloc .cp-secs.vs li { grid-template-columns: 12em minmax(0, 1fr) 44px 92px; column-gap: 8px; }
+  .p-alloc .cp-secs.vs li { grid-template-columns: 12em minmax(0, 1fr) 52px 104px; column-gap: 10px; }
   .p-alloc .cp-secs-h { display: none; }
   .p-alloc .cp-secs.vs .ixw .lbl { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; font-size: 12px; }
 }
 
-/* ================================================================ phones: one column, the order of the brief */
+/* ================================================================ phones: one column, the order of the brief; the same
+   hero as on a computer, scaled (the question, the scoreboard face to face, the chart across) */
 @media (max-width: 767px) {
-  .cp-dash { grid-template-columns: minmax(0, 1fr); grid-template-areas: "port" "perf" "hold" "dec" "risk" "alloc" "fills"; }
-  .cp-h1 { font-size: 18px; }
-  .cp-by { display: block; }
-  .cp-by .cp-sep { display: none; }
-  /* the mark beside the title; the links to How it works, Verify and Track record on their own line under the tagline */
-  .cp-brand { align-items: flex-start; gap: 10px; }
-  .cp-mark { width: 26px; height: 26px; margin-top: -2px; }
-  .cp-brand-t { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "tag" "links"; }
-  .cp-links { margin-top: 6px; padding-left: 0; border-left: 0; gap: 2px 18px; }
+  .cp-dash { grid-template-columns: minmax(0, 1fr); grid-template-areas: "port" "perf" "hold" "dec" "risk" "alloc" "fills"; padding-top: 26px; }
+  /* the top bar: the mark and the title, the status under the title, the three links under them (the 899px block) */
+  body[data-page="cp"] .top-inner { column-gap: 10px; padding-top: 14px; }
+  .cp-mark { width: 26px; height: 26px; }
+  .cp-h1 { font-size: 17px; }
+  .cp-links { margin-top: 12px; gap: 2px 22px; }
   body[data-page="cp"] .cp-links a { padding-block: 6px; margin-block: -6px; }   /* a 30px tap area; the line keeps its height */
-  body[data-page="cp"] .top-inner { row-gap: 8px; padding-block: 12px; }
-  body[data-page="cp"] .top-right, .cp-pills { gap: 6px; }
-  .cp-pills { display: contents; }            /* the pills and the status wrap together: two rows on a phone */
-  .cp-pill, .cp-status { height: 30px; padding: 0 9px; font-size: 12px; gap: 5px; }
-  .cp-status { white-space: normal; height: auto; min-height: 30px; padding-block: 5px; line-height: 1.3; }
-  .cp-status .lg { display: none; }
-  .cp-big { font-size: 34px; }
+  .cp-status { font-size: 12.5px; gap: 7px; }
+  .cp-tagline { margin-top: 30px; font-size: 14px; }
+  .cp-q { margin-bottom: 8px; letter-spacing: -0.03em; }
+  body[data-page="cp"] .pub-disclaimer p { font-size: 12px; }
+  /* the scoreboard: Claude and the ETF face to face on the two halves, a hairline between them, the gap on one line
+     under them (three columns would not fit two figures of this size) */
+  .cp-duel-when { font-size: 12.5px; }
+  .cp-duel-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto auto auto; column-gap: 0; margin-top: 14px; }
+  .cp-duel-row::before { content: ""; grid-column: 1 / -1; grid-row: 1 / 4; justify-self: center; width: 1px; margin: 2px 0; background: var(--cp-line-2); }
+  .cp-duel-c.is-c > *, .cp-duel-c.is-e > * { justify-self: center; text-align: center; }
+  .cp-duel-c.is-e > * { grid-column: 2; }
+  .cp-duel-c.is-g { display: flex; grid-column: 1 / -1; grid-row: 4; justify-content: center; align-items: baseline; gap: 10px; margin-top: 16px; }
+  .cp-duel-c.is-g > * { margin: 0; }
+  .cp-duel-k { gap: 7px; font-size: 11px; letter-spacing: 0.12em; }
+  .cp-duel-k .cp-sw { width: 16px; }
+  .cp-duel-n { margin-top: 8px; }
+  .cp-duel-c.is-g .cp-duel-n { font-size: 24px; letter-spacing: -0.02em; }
+  /* the $ unit: the two dollar values a step smaller again on the two halves, so each keeps room from the hairline
+     between them (their line box still the % figures') */
+  .cp-duel.is-usd .cp-duel-c:not(.is-g) .cp-duel-n {
+    font-size: calc(var(--cp-duel) * 0.64); padding: calc((1 / 0.64 - 1) * 0.8633em) 0 calc((1 / 0.64 - 1) * 0.1367em);
+  }
+  .cp-duel-s { margin-top: 6px; font-size: 13.5px; }
+  .cp-duel-c.is-g .cp-duel-s { font-size: 13.5px; }
+  .cp-keys .k-hint { display: none; }
+  .cp-plot-w { margin: 16px -6px 0 -4px; }
+  /* the session's note at the plot's foot, over the dates (the scoreboard's date line has it): a finger presses the
+     line's middle and top, the note no longer covers the point it names */
+  .cp-plot-ev { top: auto; bottom: 2px; }
+  .p-perf { margin-top: 14px; }
+  .cp-pf { gap: 10px 16px; }
+  .cp-keys { gap: 4px 12px; }
+  .cp-kvs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cp-tools { margin-left: 0; }
-  .cp-ro-ev { flex-basis: 100%; text-align: left; }
-  /* no list scrolls inside a panel on a phone: the page scrolls */
-  .cp-scroll, .p-hold .cp-scroll, .p-fills .cp-scroll { min-height: 0; margin: 0; }
-  .cp-scroll > * { position: static; overflow: visible; padding: 0; -webkit-mask-image: none; mask-image: none; }
-  .cp-ft thead th { position: static; }
-  .cp-hdet { padding-left: 6px; }
+  .cp-ph { margin-bottom: 16px; }
+  .cp-label { font-size: 13.5px; }
+  .cp-ahead { gap: 8px 14px; margin-top: -2px; }
+  .cp-ahead-bar { width: 100%; }
+  .cp-hl-h, .cp-hrow, .cp-hl-cash { grid-template-columns: 34px minmax(0, 1fr) 44px 54px 10px; gap: 10px; }
+  .cp-hl-h.no-g, .cp-hl.no-g .cp-hrow, .cp-hl-cash.no-g { grid-template-columns: 34px minmax(0, 1fr) 50px 10px; }
+  .cp-nm b { font-size: 14.5px; }
+  .cp-nm small { font-size: 12.5px; }
+  .cp-hrow .w, .cp-hrow .g { font-size: 13.5px; }
+  .cp-hdet { padding-left: 0; }
+  .cp-quote blockquote { font-size: 16px; -webkit-line-clamp: 6; }
+  /* Allocation: the name and the two figures on one line, the pair of bars under them across the row (beside a long name
+     the bars had 32px) */
+  .cp-secs.vs { grid-template-columns: minmax(0, 1fr); }
+  .cp-secs.vs li { grid-template-columns: minmax(0, 1fr) 56px 64px; grid-template-rows: auto auto; column-gap: 12px; min-height: 0; padding: 10px 0 11px; }
+  .cp-secs.vs li > .n { grid-area: 1 / 1; }
+  .cp-secs.vs li > .w { grid-area: 1 / 2; }
+  .cp-secs.vs li > .ixw { grid-area: 1 / 3; }
+  .cp-secs.vs li > .cp-track { grid-area: 2 / 1 / 3 / -1; margin-top: 7px; }
+  .cp-secs-h { grid-template-columns: minmax(0, 1fr) 56px 64px; gap: 12px; margin-top: 18px; }
+  .cp-secs-h .k-c::before, .cp-secs-h .k-i::before { display: none; }   /* the bars' colors as everywhere: azure is Claude */
   /* a long name or sector goes on a second line rather than ending in "..." ("Keysight Technologies" at 390px) */
   .cp-nm b, .cp-nm small { white-space: normal; }
   /* the decisions table: two lines a row (date, result, fingerprint / changes, then the orders with their venue); from
@@ -839,7 +1132,7 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
   .cp-dt-wrap { margin: 0; padding: 0; overflow: visible; }
   .cp-dt, .cp-dt tbody { display: block; }
   .cp-dt thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .cp-drow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 9px 0; border-bottom: 1px solid var(--cp-line); }
+  .cp-drow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 12px 0; border-bottom: 1px solid var(--cp-line); }
   .cp-drow[hidden] { display: none; }
   .cp-drow > td { display: block; padding: 0 !important; border: 0; text-align: left !important; }
   .cp-drow.open { border-bottom-color: transparent; }
@@ -847,50 +1140,92 @@ body:has(.cp-dialog[open]) { overflow: hidden; }
   .cp-drow .c-res { order: 2; flex: 1 1 auto; }
   .cp-drow .c-fp { order: 3; }
   .cp-drow::after { content: ""; order: 4; flex-basis: 100%; height: 0; }   /* the second line starts here */
+  .cp-drow:has(> .c-chg:empty):has(> .c-ord:empty)::after { display: none; } /* none ("Held"): one line, evenly padded */
   .cp-drow .c-chg { order: 5; }
-  .cp-drow .c-ord { order: 6; margin-left: auto; color: var(--cp-text-2); font-size: 12px; }
-  .cp-drow .c-ven, .cp-drow .c-chg:has(> .cp-na), .cp-drow .c-ord:has(> .cp-na) { display: none; }
+  .cp-drow .c-ord { order: 6; margin-left: auto; color: var(--cp-text-2); font-size: 12.5px; }
+  .cp-drow .c-ven, .cp-drow .c-chg:empty, .cp-drow .c-ord:empty { display: none; }
+  .c-res .c-due { display: none; }             /* a scheduled row's day: on its second line ("due Mon 23 Nov") */
+  .cp-dl { column-gap: 20px; }
+  .cp-dl .cp-sep { display: none; }            /* the files wrap: their rules part them, no dot left at a line's end */
   .cp-dt .sm { display: inline; }
   .cp-ddet { display: block; }
   .cp-ddet[hidden] { display: none; }
   .cp-ddet > td { display: block; padding: 0 0 14px; }
   .cp-dd { padding-left: 0; }
-  /* the scorecard on a phone: the fill's day without its price, closer columns, so its five columns fit the screen */
+  /* the scorecard on a phone: the fill's day without its price, closer columns and heads that may take two lines
+     ("Since / bought"), so its five columns fit the screen */
   .cp .cp-sc-t { font-size: 12px; }
   .cp .cp-sc-t th, .cp .cp-sc-t td { padding-left: 8px; }
   .cp .cp-sc-t th:first-child { padding-left: 0; }
-  .cp-sc-t .px { display: none; }
+  .cp .cp-sc-t thead th { white-space: normal; vertical-align: bottom; }
+  .cp-sc-t .px, .cp-sc-t .cp-logo { display: none; }
   .cp-vrow { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-  /* a dialog takes nearly the whole screen, its body scrolling inside (dvh: the visible height, with the browser's bars) */
-  .cp-dialog { width: calc(100vw - 16px); max-width: none; max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); border-radius: 16px; }
-  .cp-dlg-in { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
-  .cp-dlg-h { padding: 12px 14px 12px 16px; }
-  .cp-dlg-b { padding: 14px 16px 18px; }
-  .cp-steps li { column-gap: 12px; }
   /* Track record on a phone: the fill price goes (it is in the decision's own table), the columns close up and a head
      may take two lines ("Price / since"), so the table fits a 320px screen */
   .cp-trk { font-size: 12px; }
-  .cp-trk th, .cp-trk td { padding-left: 8px; }
+  .cp-trk th, .cp-trk td { padding-left: 7px; }
+  .cp-trk .cp-fl-tk { gap: 6px; }
+  .cp-trk .cp-logo { --s: 16px !important; }        /* a size smaller than the tile's own (cp.js), so the table fits 360px */
   .cp-trk thead th, .cp-trk thead th.num { white-space: normal; vertical-align: bottom; }
   .cp-trk .px { display: none; }
   .cp-trk-k { column-gap: 10px; }
-  .cp-trk-k dd b { font-size: 15px; }
+  .cp-trk-k dd b { font-size: 19px; }
 }
 @media (min-width: 360px) and (max-width: 767px) {
   .cp-drow .c-date { min-width: 8em; }
 }
-/* the narrowest phones (320-359px): Track record's table a size smaller, its columns closer, so Effect stays in view */
+/* the narrowest phones (320-359px): Track record's table a size smaller, its columns closer, so Effect stays in view;
+   the question a size smaller and the gutters 16px, so the scoreboard's two figures still face each other */
 @media (max-width: 359px) {
+  :root { --cp-q: 28px; --cp-gutter: 16px; }
   .cp-trk { font-size: 11px; }
   .cp-trk th, .cp-trk td { padding-left: 6px; }
+  .cp-trk .cp-logo { display: none; }                /* the ticker alone: the six columns need the room */
+  .cp .cp-sc-t th, .cp .cp-sc-t td { padding-left: 6px; }   /* a decision's own table, so Effect stays in view */
+  .cp .cp-sc-t th:first-child { padding-left: 0; }
 }
+/* phones (under 700px, as on Markets Briefing; a small tablet keeps the centered sheet): every dialog a bottom sheet
+   (21 Nov 2026): the full width from the bottom edge, at most 92% of the visible height (dvh: with the browser's bars),
+   a grabber at its top; it slides up in 320ms, and a swipe down on its header closes it (cp.js makeDialog) */
+@media (max-width: 699px) {
+  .cp-dialog {
+    width: 100vw; max-height: 92vh; max-height: 92dvh; margin: auto 0 0; border-width: 1px 0 0; border-radius: 20px 20px 0 0;
+    opacity: 1; transform: translateY(100%);
+  }
+  .cp-dialog[open] { transform: none; transition-duration: 320ms; }
+  @starting-style {
+    .cp-dialog[open] { opacity: 1; transform: translateY(100%); }
+  }
+  .cp-dialog.is-drag { transition: none; }
+  .cp-dlg-in { max-height: 92vh; max-height: 92dvh; }
+  .cp-dlg-h { position: relative; padding: 24px 16px 0 20px; touch-action: none; }
+  .cp-dlg-h::before {
+    content: ""; position: absolute; top: 8px; left: 50%; width: 36px; height: 5px; margin-left: -18px; border-radius: 3px;
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .cp-dlg-h h2 { font-size: 22px; }
+  .cp-dlg-b { padding: 16px 20px calc(24px + env(safe-area-inset-bottom)); }
+  /* Verify's four data files two by two (they wrapped three and one, "curve.json" alone on a line) */
+  .cp-dl { display: grid; grid-template-columns: repeat(2, max-content); justify-items: start; gap: 12px 28px; }
+}
+@media (max-width: 699px) and (pointer: coarse) {
+  .cp-dl { row-gap: 0; }                       /* each file is a 44px tap target already */
+}
+/* Track record on a narrow phone: "Median effect" takes two lines where "Best trade" takes one, so every label gets the
+   room of two and the three figures stay on one line */
+@media (max-width: 479px) {
+  .cp-trk-k dt { min-height: 2.6em; }
+}
+
 
 /* ================================================================ motion */
 @media (prefers-reduced-motion: reduce) {
-  .cp-dash > *, .cp-plot.reveal, .cp-skel, .cp-dialog[open], .cp-status i, .cp[aria-busy] .cp-dash > * { animation: none !important; }
-  .cp *, .cp-dialog * { transition: none !important; scroll-behavior: auto !important; }
+  .cp-enter *, .cp-enter > *, .cp-skel, .cp-skel::after, .cp-shim, .cp-status i, .cp[aria-busy] .cp-dash > * { animation: none !important; }
+  .cp *, .cp-dialog, .cp-dialog::backdrop, .cp-dialog * { transition: none !important; scroll-behavior: auto !important; }
+  body[data-page="cp"] .site-bar { transition: none; }
 }
 @media (forced-colors: active) {
-  .cp-panel, .cp-pill, .cp-status, .cp-chip, .cp-btn, .cp-seg { border: 1px solid CanvasText; }
+  .cp-status, .cp-chip, .cp-btn { border: 1px solid CanvasText; }
+  .cp-panel::before, .cp-quote::before, .cp-note::before { background: CanvasText; }
   .cp-seg button[aria-pressed="true"] { outline: 2px solid Highlight; }
 }
