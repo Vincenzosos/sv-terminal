@@ -19,7 +19,12 @@ function syncNav(page) {
   const nav = NAV.find((n) => n.id === page) || NAV[0];
   const ws = MODES[nav.mode].ws;
   document.body.dataset.ws = ws;
-  document.body.dataset.page = nav.id;
+  /* 21 Nov 2026: #/news and #/cv are pages without a tab (NAV keeps the Claude Portfolio only, so SHELL_EXTRAS stays
+     off); each page names itself, and the site bar marks it */
+  document.body.dataset.page = Pages[page] ? page : nav.id;
+  document.querySelectorAll("#site-bar [data-site]").forEach((a) => {
+    if (a.dataset.site === document.body.dataset.page) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
   document.querySelectorAll("#tabs a").forEach((a) => a.setAttribute("aria-current", a.dataset.nav === nav.id ? "page" : "false"));
   const tag = $("sb-ws");
   if (tag) {

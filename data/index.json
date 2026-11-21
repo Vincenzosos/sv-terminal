@@ -1,6 +1,6 @@
 {
  "v": 1,
- "built": "2026-11-21T08:49:29+01:00",
+ "built": "2026-11-21T11:39:46+01:00",
  "site": "https://vincenzosos.github.io/sv-terminal/",
  "public": {
   "/api/cp/curve": [
@@ -19,13 +19,21 @@
    "7b9acfa2757b62d246a8eddbcde73fa4076a6a84",
    200
   ],
+  "/api/cv": [
+   "c45da638aba08b9bf1f720c58de9d78c992bac4a",
+   200
+  ],
+  "/api/news/digest": [
+   "d5c3c10d8cee87188eeea88246373417f516f22a",
+   200
+  ],
   "/api/status": [
    "7fbc29f027b400f6512972fd492109517e235ed4",
    200
   ]
  },
  "counts": {
-  "public": 5,
+  "public": 7,
   "public_errors": 0,
   "optional_dropped": 0
  },
