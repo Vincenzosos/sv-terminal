@@ -7,8 +7,8 @@ Site: https://vincenzosos.github.io/sv-terminal/
 ## What this is
 
 SV Terminal is a personal app on its owner's computer. This repository is a static, read-only snapshot of its public
-pages, published on GitHub Pages: the Claude Portfolio (`#/cp`, the home page), Markets Briefing (`#/news`) and the
-owner's CV (`#/cv`). Nothing here runs a server, places orders or holds credentials.
+pages, published on GitHub Pages: the Claude Portfolio (`#/cp`, the home page) and Markets Briefing (`#/news`).
+Nothing here runs a server, places orders or holds credentials.
 
 ## The Claude Portfolio
 
@@ -47,10 +47,6 @@ by Claude in its own words. Each item has its source, its time and a link to it;
   session, from Lang & Schwarz closes converted to dollars.
 - On computers the page is a 3D space drawn with the browser's own WebGL and CSS (no library); phones, browsers
   without WebGL and readers who prefer reduced motion get the same items as a list.
-
-## The CV
-
-The owner's one-page CV, word for word, without the phone number and the email; the LinkedIn link stays.
 
 ## What you can check
 
