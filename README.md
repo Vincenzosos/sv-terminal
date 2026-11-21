@@ -6,9 +6,9 @@ Site: https://vincenzosos.github.io/sv-terminal/
 
 ## What this is
 
-SV Terminal is a personal app on its owner's computer. This repository is a static, read-only snapshot of its one
-public page, the Claude Portfolio, published on GitHub Pages. Nothing here runs a server, places orders or holds
-credentials.
+SV Terminal is a personal app on its owner's computer. This repository is a static, read-only snapshot of its public
+pages, published on GitHub Pages: the Claude Portfolio (`#/cp`, the home page), Markets Briefing (`#/news`) and the
+owner's CV (`#/cv`). Nothing here runs a server, places orders or holds credentials.
 
 ## The Claude Portfolio
 
@@ -30,6 +30,27 @@ credentials.
   Lang & Schwarz session-end mid price ± 0.05%, $1 per order, and marked as simulated.
 - **Benchmark:** an S&P 500 exchange-traded fund (ETF), iShares Core S&P 500 (accumulating). It is not traded: the
   same $100,000 goes in at its October 19, 2026 price, with no fees.
+
+## Markets Briefing
+
+Since November 21, 2026, a daily digest of the news that moves financial markets, written each morning (07:30 Berlin)
+by Claude in its own words. Each item has its source, its time and a link to it; nothing is quoted.
+
+- **Sources, primary first:** the Federal Reserve Board, the European Central Bank and the Bank of England (their
+  press feeds); current reports (Form 8-K) that S&P 500 companies filed with the SEC (EDGAR full-text search); Claude's
+  web searches for official statistics (for example the Bureau of Labor Statistics and the Bureau of Economic
+  Analysis), Treasury releases and companies' own releases. An established news outlet is cited only when no primary
+  page states the facts. Headlines from the GDELT Project are used only to discover stories and are never cited.
+- **Checks:** fixed rules drop any item without an https link, from an aggregator or blog, outside the time window,
+  with a quotation or a link in its text; a summary sentence stays only when the items below it state its facts.
+- **Market moves:** the S&P 500 and Nasdaq 100 exchange-traded funds and the biggest S&P 500 moves of the last
+  session, from Lang & Schwarz closes converted to dollars.
+- On computers the page is a 3D space drawn with the browser's own WebGL and CSS (no library); phones, browsers
+  without WebGL and readers who prefer reduced motion get the same items as a list.
+
+## The CV
+
+The owner's one-page CV, word for word, without the phone number and the email; the LinkedIn link stays.
 
 ## What you can check
 
@@ -66,6 +87,7 @@ Jobs on the owner's computer publish a new snapshot, in Berlin time:
 
 - after each decision: Wednesday from 23:40, Saturday from 08:30;
 - after each weekday's valuation: Monday to Friday from 23:25, after the Lang & Schwarz session end;
+- after each Markets Briefing edition: every day from 07:30;
 - sometimes by hand.
 
 The broker job (Monday and Thursday at 18:00, 20:15 and 22:20) publishes nothing; its fills appear with that night's
