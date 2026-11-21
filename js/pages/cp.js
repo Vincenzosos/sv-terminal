@@ -582,11 +582,18 @@
       h("b", { class: tone(sb.return) || null }, sp1(sb.return)), h("span", { class: "cp-sep", "aria-hidden": "true" }, " · "),
       "ETF ", h("b", { class: ok(sb.etf) ? tone(sb.etf) || null : null }, sp1(sb.etf)));
   }
+  /* the company's logo in its badge (logos.py, logos/index.json, 21 Nov 2026); the ticker stays for screen readers and
+     wherever there is no logo */
+  let LOGOS = new Set();
+  const tkBadge = (t) => (LOGOS.has(t)
+    ? h("span", { class: "cp-tk has-logo", title: t }, h("img", { src: `logos/${t.replace(".", "_")}.png`, alt: "", width: 64, height: 64, loading: "lazy", decoding: "async" }),
+      h("span", { class: "sr-only" }, t))
+    : h("span", { class: "cp-tk" }, t));
   function holdRow(r, live) {
     const id = `hold-${r.ticker}`;
     const since = live ? sinceLine(r.since_bought) : null;
     const can = !!(r.thesis || r.risks || r.exit_if || since);
-    const kids = [h("span", { class: "cp-tk" }, r.ticker),
+    const kids = [tkBadge(r.ticker),
       h("span", { class: "cp-nm" }, h("b", {}, r.name || r.ticker), h("small", {}, r.sector || "")),
       h("span", { class: "w" }, h("span", { class: "sr-only" }, live ? ", weight " : ", target "), wp(r.weight)),
       live ? h("span", { class: `g ${tone(r.gain_pct)}` }, h("span", { class: "sr-only" }, ", gain since bought "), sp(r.gain_pct, fmt.p1)) : null];
@@ -1416,7 +1423,9 @@
       byline();
       el.replaceChildren(...[band(), loading()].filter(Boolean));
       const keys = ["s", "hd", "up", "cv"];
-      const got = await Promise.allSettled(["/api/cp/summary", "/api/cp/holdings", "/api/cp/updates", "/api/cp/curve"].map((p) => api(p)));
+      const [got, lg] = await Promise.all([Promise.allSettled(["/api/cp/summary", "/api/cp/holdings", "/api/cp/updates", "/api/cp/curve"].map((p) => api(p))),
+        fetch("logos/index.json").then((r) => (r.ok ? r.json() : [])).catch(() => [])]);
+      LOGOS = new Set(Array.isArray(lg) ? lg : []);
       if (!el.isConnected || Router.current !== "cp") return;
       const D = { err: {} };
       got.forEach((r, i) => {

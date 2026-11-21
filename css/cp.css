@@ -390,6 +390,8 @@ button.cp-hrow:hover > .cp-chev { color: var(--cp-text); }
   border: 1px solid var(--cp-line); font: 700 11px / 1 var(--cp-font); letter-spacing: 0.02em; color: var(--cp-text);
 }
 .cp-tk.cash { color: var(--cp-text-2); font-size: 13px; }
+.cp-tk.has-logo { background: none; border: 0; }
+.cp-tk.has-logo img { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; background: rgb(244, 245, 247); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08); }
 .cp-nm { min-width: 0; }
 .cp-nm b, .cp-nm small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cp-nm b { font-size: 13px; font-weight: 500; line-height: 1.3; }
