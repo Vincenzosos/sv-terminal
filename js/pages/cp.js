@@ -1091,7 +1091,8 @@
   function decDetail(u, k, s, names) {
     const when = wday((u.decided_at && berlinDate(u.decided_at)) || u.date);
     const box = h("div", { class: "cp-dd" });
-    /* a decision made with the richer brief and answer of 17 Nov 2026 carries "method 2": a small mark that opens How it
+    /* a decision made with the richer brief and answer of 17 Nov 2026 carries "method 2", one made with the brief of
+       24 Nov 2026 (the largest companies, the biggest moves, Claude's lessons) "method 3": a small mark that opens How it
        works, whose Method changes list says what changed */
     const method = ok(u.method) && u.method >= 2 ? h("a", { class: "cp-tag", href: HOW_HREF, "aria-haspopup": "dialog",
       title: "What changed with this method: How it works, Method changes" }, `method ${u.method}`) : null;
@@ -1112,6 +1113,11 @@
     if (skip) box.append(skip);
     if (u.portfolio_risk) {
       box.append(h("div", { class: "cp-dd-sec" }, h("p", { class: "k" }, "Portfolio risk"), h("p", { class: "t" }, prose(u.portfolio_risk))));
+    }
+    /* method 3 (from 25 Nov 2026): the one thing Claude would do differently next time, from its own record; its next
+       briefs show it back */
+    if (u.lesson) {
+      box.append(h("div", { class: "cp-dd-sec" }, h("p", { class: "k" }, "Lesson learned"), h("p", { class: "t" }, prose(u.lesson))));
     }
     const lists = decLists(u);
     if (lists) box.append(lists);
@@ -1394,6 +1400,10 @@
      then the dated changes of method; the rules never change without a new version) */
   /* [ISO date, the owner's words, verbatim] newest first */
   const METHOD_CHANGES = [
+    ["2026-11-24", "24 Nov 2026: from the decision of 25 Nov, Claude also sees the 40 largest S&P 500 companies, the biggest " +
+      "moves of the week and the month among the 200 largest, a market regime summary and its own lessons. It may buy any of " +
+      "those companies as well as its candidates, and judges sharp drops in large, profitable companies on their cause. The " +
+      "rules (v3) are unchanged."],
     ["2026-11-17", "17 Nov 2026: from the decision of 18 Nov, Claude's brief adds company results and valuations from SEC filings, " +
       "the S&P 500's sector weights, each holding's thesis and its result since purchase, Claude's own record, and a group of " +
       "candidates chosen on company figures (growing, profitable companies with high free cash flow for their price) besides " +
@@ -1406,7 +1416,9 @@
     const searches = ok(lim.web_searches_max) ? `up to ${lim.web_searches_max} web searches` : "a few web searches";
     const STEPS = [
       ["Brief", "S&P 500 prices, trends and sector moves condensed into candidates; from 18 Nov also company results filed with " +
-        "the US Securities and Exchange Commission (SEC).", "Python · Lang & Schwarz prices · SEC filings"],
+        "the US Securities and Exchange Commission (SEC), from 25 Nov the 40 largest companies and the biggest moves of the " +
+        "week and the month.",
+        "Python · Lang & Schwarz prices · SEC filings"],
       ["Claude decides", `Target weights, with a thesis and the risks for each stock; ${searches}.`, "Claude Code · Wed evening, Sat morning"],
       ["Rules check", `Rules v${v} enforced: fixed or rejected, then fingerprinted before any order exists.`, "the program"],
       ["Orders at Interactive Brokers (demo)", "Market-on-close, filled at the US closing auction.", "Thursday or Monday · 20:15 Berlin"],
